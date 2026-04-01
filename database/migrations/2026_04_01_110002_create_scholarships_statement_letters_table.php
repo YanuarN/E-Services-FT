@@ -1,0 +1,40 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('scholarships_statement_letters', function (Blueprint $table) {
+            $table->id();
+            $table->string('student_name');
+            $table->string('study_program');
+            $table->string('nim');
+            $table->string('scolarship_name');
+            $table->string('scolarship_provider');
+            $table->string('phone_number');
+            $table->string('letter_number');
+            $table->date('letter_date');
+            $table->enum('status', ['SUBMITTED', 'APPROVE', 'REJECT'])->default('SUBMITTED');
+            $table->string('public_token')->unique();
+            $table->string('pdf_path');
+            $table->timestamps();
+
+            $table->index('public_token');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('scholarships_statement_letters');
+    }
+};

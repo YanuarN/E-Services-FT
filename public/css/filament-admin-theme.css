@@ -1,0 +1,191 @@
+:root {
+    --soto-primary: #2E3A8C;
+    --soto-primary-hover: #1F2A66;
+    --soto-accent: #F4C430;
+    --soto-success: #1ABC9C;
+
+    --soto-surface: #ffffff;
+    --soto-surface-card: #FFFFFF;
+    --soto-surface-soft: #E8EEFF;
+    --soto-text: #0F172A;
+    --soto-text-muted: #475569;
+    --soto-ring: color-mix(in oklab, var(--soto-primary) 24%, white);
+}
+
+:root.dark {
+    --soto-surface: #0B1228;
+    --soto-surface-card: #0F1A3B;
+    --soto-surface-soft: #15224C;
+    --soto-text: #E2E8F0;
+    --soto-text-muted: #A8B3CF;
+    --soto-ring: color-mix(in oklab, var(--soto-accent) 32%, black);
+}
+
+.fi-body {
+    background: radial-gradient(circle at 0 0, color-mix(in oklab, var(--soto-primary) 14%, transparent), transparent 45%), var(--soto-surface);
+    color: var(--soto-text);
+}
+
+.fi-topbar,
+.fi-sidebar,
+.fi-sidebar-header {
+    background: linear-gradient(120deg, var(--soto-primary) 0%, var(--soto-primary-hover) 100%);
+    color: #FFFFFF;
+}
+
+.fi-topbar {
+    border-bottom: 2px solid var(--soto-accent);
+}
+
+.fi-topbar-item-label,
+.fi-sidebar-item-label,
+.fi-sidebar-group-label {
+    color: color-mix(in oklab, white 92%, var(--soto-primary));
+}
+
+.fi-logo {
+    color: var(--soto-accent);
+}
+
+.fi-topbar-item-btn > .fi-icon,
+.fi-sidebar-item-btn > .fi-icon,
+.fi-sidebar-group-btn > .fi-icon,
+.fi-sidebar-group-dropdown-trigger-btn > .fi-icon {
+    color: color-mix(in oklab, white 78%, var(--soto-primary));
+}
+
+.fi-topbar-item-btn:hover,
+.fi-topbar-item-btn:focus-visible,
+.fi-sidebar-item.fi-sidebar-item-has-url > .fi-sidebar-item-btn:hover,
+.fi-sidebar-item.fi-sidebar-item-has-url > .fi-sidebar-item-btn:focus-visible,
+.fi-sidebar-group-dropdown-trigger-btn:hover,
+.fi-sidebar-group-dropdown-trigger-btn:focus-visible {
+    background: color-mix(in oklab, white 12%, transparent);
+}
+
+.fi-topbar-item.fi-active .fi-topbar-item-btn,
+.fi-sidebar-item.fi-active > .fi-sidebar-item-btn {
+    background: var(--soto-accent);
+}
+
+.fi-topbar-item.fi-active .fi-topbar-item-label,
+.fi-topbar-item.fi-active .fi-topbar-item-btn > .fi-icon,
+.fi-sidebar-item.fi-active > .fi-sidebar-item-btn > .fi-sidebar-item-label,
+.fi-sidebar-item.fi-active > .fi-sidebar-item-btn > .fi-icon {
+    color: var(--soto-primary-hover);
+}
+
+.fi-sidebar-item.fi-active > .fi-sidebar-item-btn > .fi-sidebar-item-grouped-border > .fi-sidebar-item-grouped-border-part {
+    background: var(--soto-success);
+}
+
+.fi-main,
+.fi-simple-main {
+    color: var(--soto-text);
+}
+
+.fi-section:not(.fi-section-not-contained):not(.fi-aside),
+.fi-tabs:not(.fi-contained),
+.fi-simple-main,
+.fi-global-search-results-ctn {
+    background: var(--soto-surface-card);
+    box-shadow: 0 8px 24px color-mix(in oklab, var(--soto-primary) 8%, transparent);
+    border: 1px solid color-mix(in oklab, var(--soto-primary) 10%, transparent);
+}
+
+.fi-section.fi-secondary:not(.fi-aside),
+.fi-tabs.fi-contained,
+.fi-global-search-result-group-header {
+    background: var(--soto-surface-soft);
+}
+
+.fi-section .fi-section-header-heading,
+.fi-page-header-heading,
+.fi-global-search-result-heading {
+    color: var(--soto-primary-hover);
+}
+
+.fi-section .fi-section-header-description,
+.fi-global-search-result-detail,
+.fi-fo-field .fi-fo-field-label-content,
+.fi-link:not(.fi-color) {
+    color: var(--soto-text-muted);
+}
+
+.fi-btn.fi-color.fi-color-primary {
+    --bg: var(--soto-primary);
+    --hover-bg: var(--soto-primary-hover);
+    --text: #FFFFFF;
+    --hover-text: #FFFFFF;
+    --dark-bg: var(--soto-primary);
+    --dark-hover-bg: var(--soto-primary-hover);
+    --dark-text: #FFFFFF;
+    --dark-hover-text: #FFFFFF;
+}
+
+.fi-btn.fi-color.fi-color-warning {
+    --bg: var(--soto-accent);
+    --hover-bg: color-mix(in oklab, var(--soto-accent) 88%, black);
+    --text: var(--soto-primary-hover);
+    --hover-text: var(--soto-primary-hover);
+    --dark-bg: var(--soto-accent);
+    --dark-hover-bg: color-mix(in oklab, var(--soto-accent) 88%, black);
+    --dark-text: var(--soto-primary-hover);
+    --dark-hover-text: var(--soto-primary-hover);
+}
+
+.fi-btn.fi-color.fi-color-success,
+.fi-btn.fi-color.fi-color-info {
+    --bg: var(--soto-success);
+    --hover-bg: color-mix(in oklab, var(--soto-success) 86%, black);
+    --text: #FFFFFF;
+    --hover-text: #FFFFFF;
+    --dark-bg: var(--soto-success);
+    --dark-hover-bg: color-mix(in oklab, var(--soto-success) 86%, black);
+    --dark-text: #FFFFFF;
+    --dark-hover-text: #FFFFFF;
+}
+
+.fi-btn.fi-outlined {
+    border-color: color-mix(in oklab, var(--soto-primary) 34%, white);
+    color: var(--soto-primary);
+}
+
+.fi-input-wrp {
+    background: var(--soto-surface-card);
+    border: 1px solid color-mix(in oklab, var(--soto-primary) 16%, transparent);
+}
+
+.fi-input-wrp:not(.fi-disabled):not(:has(.fi-ac-action:focus)):focus-within {
+    box-shadow: 0 0 0 3px var(--soto-ring);
+    border-color: var(--soto-primary);
+}
+
+input.fi-input,
+.fi-fo-textarea textarea {
+    color: var(--soto-text);
+}
+
+input.fi-input::placeholder,
+.fi-fo-textarea textarea::placeholder {
+    color: color-mix(in oklab, var(--soto-text-muted) 78%, white);
+}
+
+.fi-badge.fi-color.fi-color-primary {
+    --color-500: var(--soto-primary);
+    --text: #FFFFFF;
+    --dark-text: #FFFFFF;
+}
+
+.fi-badge.fi-color.fi-color-warning {
+    --color-500: var(--soto-accent);
+    --text: var(--soto-primary-hover);
+    --dark-text: #FFFFFF;
+}
+
+.fi-badge.fi-color.fi-color-success,
+.fi-badge.fi-color.fi-color-info {
+    --color-500: var(--soto-success);
+    --text: #0E6251;
+    --dark-text: #FFFFFF;
+}

@@ -210,6 +210,15 @@ All business logic must live in `app/Services/`.
 - Injectable via constructor
 - Reusable and testable
 
+### 4.3 Filament Resource Generation
+
+For Filament resources, AI agents must follow the official command-based workflow.
+
+**Mandatory Rule:**
+- Use Artisan to generate resources, e.g. `php artisan make:filament-resource Customer`
+- Do not manually create Filament resource boilerplate files when a generator command exists
+- Keep generated structure aligned with Filament documentation and conventions
+
 ## 5. DRY Principle (Mandatory)
 
 Across the entire project:
