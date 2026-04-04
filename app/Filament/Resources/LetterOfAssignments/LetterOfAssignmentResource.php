@@ -23,6 +23,12 @@ class LetterOfAssignmentResource extends Resource
 
     protected static string|\UnitEnum|null $navigationGroup = 'Surat';
 
+    protected static ?string $navigationLabel = 'Surat Tugas Mahasiswa (Kolektif/Kelompok)';
+
+    protected static ?string $modelLabel = 'Surat Tugas Mahasiswa (Kolektif/Kelompok)';
+
+    protected static ?string $pluralModelLabel = 'Surat Tugas Mahasiswa (Kolektif/Kelompok)';
+
     public static function form(Schema $schema): Schema
     {
         return LetterOfAssignmentForm::configure($schema);

@@ -23,6 +23,12 @@ class TestingPermissionRequestLetterResource extends Resource
 
     protected static string|\UnitEnum|null $navigationGroup = 'Surat';
 
+    protected static ?string $navigationLabel = 'Surat Permohonan Izin Pengujian Alat Hasil Penelitian';
+
+    protected static ?string $modelLabel = 'Surat Permohonan Izin Pengujian Alat Hasil Penelitian';
+
+    protected static ?string $pluralModelLabel = 'Surat Permohonan Izin Pengujian Alat Hasil Penelitian';
+
     public static function form(Schema $schema): Schema
     {
         return TestingPermissionRequestLetterForm::configure($schema);

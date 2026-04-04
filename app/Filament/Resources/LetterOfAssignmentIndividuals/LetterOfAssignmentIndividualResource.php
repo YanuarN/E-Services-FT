@@ -23,6 +23,12 @@ class LetterOfAssignmentIndividualResource extends Resource
 
     protected static string|\UnitEnum|null $navigationGroup = 'Surat';
 
+    protected static ?string $navigationLabel = 'Surat Tugas Mahasiswa (Mandiri/Individual)';
+
+    protected static ?string $modelLabel = 'Surat Tugas Mahasiswa (Mandiri/Individual)';
+
+    protected static ?string $pluralModelLabel = 'Surat Tugas Mahasiswa (Mandiri/Individual)';
+
     public static function form(Schema $schema): Schema
     {
         return LetterOfAssignmentIndividualForm::configure($schema);

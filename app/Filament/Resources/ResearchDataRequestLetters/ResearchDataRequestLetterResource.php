@@ -23,6 +23,12 @@ class ResearchDataRequestLetterResource extends Resource
 
     protected static string|\UnitEnum|null $navigationGroup = 'Surat';
 
+    protected static ?string $navigationLabel = 'Surat Permohonan Data Untuk Penelitian';
+
+    protected static ?string $modelLabel = 'Surat Permohonan Data Untuk Penelitian';
+
+    protected static ?string $pluralModelLabel = 'Surat Permohonan Data Untuk Penelitian';
+
     public static function form(Schema $schema): Schema
     {
         return ResearchDataRequestLetterForm::configure($schema);

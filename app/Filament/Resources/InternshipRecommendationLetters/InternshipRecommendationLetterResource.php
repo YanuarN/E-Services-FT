@@ -23,6 +23,12 @@ class InternshipRecommendationLetterResource extends Resource
 
     protected static string|\UnitEnum|null $navigationGroup = 'Surat';
 
+    protected static ?string $navigationLabel = 'Surat Rekomendasi Magang Mandiri';
+
+    protected static ?string $modelLabel = 'Surat Rekomendasi Magang Mandiri';
+
+    protected static ?string $pluralModelLabel = 'Surat Rekomendasi Magang Mandiri';
+
     public static function form(Schema $schema): Schema
     {
         return InternshipRecommendationLetterForm::configure($schema);

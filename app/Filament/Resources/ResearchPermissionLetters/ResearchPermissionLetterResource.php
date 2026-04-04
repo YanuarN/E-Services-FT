@@ -23,6 +23,12 @@ class ResearchPermissionLetterResource extends Resource
 
     protected static string|\UnitEnum|null $navigationGroup = 'Surat';
 
+    protected static ?string $navigationLabel = 'Surat Izin Survey Untuk Penelitian';
+
+    protected static ?string $modelLabel = 'Surat Izin Survey Untuk Penelitian';
+
+    protected static ?string $pluralModelLabel = 'Surat Izin Survey Untuk Penelitian';
+
     public static function form(Schema $schema): Schema
     {
         return ResearchPermissionLetterForm::configure($schema);

@@ -23,6 +23,12 @@ class ExamPermissionLetterResource extends Resource
 
     protected static string|\UnitEnum|null $navigationGroup = 'Surat';
 
+    protected static ?string $navigationLabel = 'Surat Izin Untuk Mengikuti Ujian (Khusus Mahasiswa Kerja Praktek)';
+
+    protected static ?string $modelLabel = 'Surat Izin Untuk Mengikuti Ujian (Khusus Mahasiswa Kerja Praktek)';
+
+    protected static ?string $pluralModelLabel = 'Surat Izin Untuk Mengikuti Ujian (Khusus Mahasiswa Kerja Praktek)';
+
     public static function form(Schema $schema): Schema
     {
         return ExamPermissionLetterForm::configure($schema);

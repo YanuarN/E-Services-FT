@@ -23,6 +23,12 @@ class PassportApplicationLetterResource extends Resource
 
     protected static string|\UnitEnum|null $navigationGroup = 'Surat';
 
+    protected static ?string $navigationLabel = 'Surat Pengantar Pembuatan Paspor (Mahasiswa)';
+
+    protected static ?string $modelLabel = 'Surat Pengantar Pembuatan Paspor (Mahasiswa)';
+
+    protected static ?string $pluralModelLabel = 'Surat Pengantar Pembuatan Paspor (Mahasiswa)';
+
     public static function form(Schema $schema): Schema
     {
         return PassportApplicationLetterForm::configure($schema);

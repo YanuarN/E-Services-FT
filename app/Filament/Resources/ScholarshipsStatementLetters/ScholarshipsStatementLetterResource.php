@@ -23,6 +23,12 @@ class ScholarshipsStatementLetterResource extends Resource
 
     protected static string|\UnitEnum|null $navigationGroup = 'Surat';
 
+    protected static ?string $navigationLabel = 'Surat Keterangan Tidak Menerima Beasiswa Lain';
+
+    protected static ?string $modelLabel = 'Surat Keterangan Tidak Menerima Beasiswa Lain';
+
+    protected static ?string $pluralModelLabel = 'Surat Keterangan Tidak Menerima Beasiswa Lain';
+
     public static function form(Schema $schema): Schema
     {
         return ScholarshipsStatementLetterForm::configure($schema);

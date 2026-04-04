@@ -1,0 +1,76 @@
+<?php
+
+namespace App\Filament\Resources\RoomUsageRequests\Schemas;
+
+use Filament\Infolists\Components\TextEntry;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+
+class RoomUsageRequestInfolist
+{
+    public static function configure(Schema $schema): Schema
+    {
+        return $schema
+            ->components([
+                Section::make('Data Pemohon')
+                    ->schema([
+                        TextEntry::make('student_name')
+                            ->label('Nama Mahasiswa'),
+                        TextEntry::make('nim')
+                            ->label('NIM'),
+                        TextEntry::make('study_program')
+                            ->label('Program Studi'),
+                        TextEntry::make('phone_number')
+                            ->label('Nomor Telepon'),
+                        TextEntry::make('unit')
+                            ->label('Unit/Organisasi'),
+                    ])
+                    ->columns(2),
+
+                Section::make('Informasi Peminjaman')
+                    ->schema([
+                        TextEntry::make('activity_name')
+                            ->label('Nama Kegiatan'),
+                        TextEntry::make('room.name')
+                            ->label('Ruang Terdaftar')
+                            ->placeholder('-'),
+                        TextEntry::make('room_name')
+                            ->label('Nama Ruang Manual')
+                            ->placeholder('-'),
+                        TextEntry::make('number_of_participants')
+                            ->label('Jumlah Peserta'),
+                        TextEntry::make('start_at')
+                            ->label('Mulai')
+                            ->dateTime('d M Y H:i'),
+                        TextEntry::make('end_at')
+                            ->label('Selesai')
+                            ->dateTime('d M Y H:i'),
+                        TextEntry::make('status')
+                            ->label('Status')
+                            ->badge()
+                            ->color(fn (string $state): string => match ($state) {
+                                'APPROVED' => 'success',
+                                'REJECTED' => 'danger',
+                                default => 'warning',
+                            }),
+                        TextEntry::make('document')
+                            ->label('Dokumen')
+                            ->placeholder('-'),
+                    ])
+                    ->columns(2),
+
+                Section::make('Metadata')
+                    ->schema([
+                        TextEntry::make('created_at')
+                            ->label('Dibuat')
+                            ->dateTime('d M Y H:i')
+                            ->placeholder('-'),
+                        TextEntry::make('updated_at')
+                            ->label('Diperbarui')
+                            ->dateTime('d M Y H:i')
+                            ->placeholder('-'),
+                    ])
+                    ->columns(2),
+            ]);
+    }
+}

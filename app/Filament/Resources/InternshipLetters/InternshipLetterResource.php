@@ -23,6 +23,12 @@ class InternshipLetterResource extends Resource
 
     protected static string|\UnitEnum|null $navigationGroup = 'Surat';
 
+    protected static ?string $navigationLabel = 'Surat Permohonan Praktek Kerja Nyata (PKN)';
+
+    protected static ?string $modelLabel = 'Surat Permohonan Praktek Kerja Nyata (PKN)';
+
+    protected static ?string $pluralModelLabel = 'Surat Permohonan Praktek Kerja Nyata (PKN)';
+
     public static function form(Schema $schema): Schema
     {
         return InternshipLetterForm::configure($schema);
