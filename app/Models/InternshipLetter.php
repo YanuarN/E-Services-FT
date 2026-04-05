@@ -17,6 +17,7 @@ class InternshipLetter extends Model
         'group_member',
         'letter_date',
         'letter_number',
+        'pdf_path',
         'public_token',
     ];
 

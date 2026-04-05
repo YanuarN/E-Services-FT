@@ -16,6 +16,7 @@ class ResearchDataRequestLetter extends Model
         'company_address',
         'letter_date',
         'letter_number',
+        'pdf_path',
         'public_token',
     ];
 

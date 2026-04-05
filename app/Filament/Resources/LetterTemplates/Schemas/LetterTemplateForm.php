@@ -27,12 +27,12 @@ class LetterTemplateForm
                     ->columns(1),
 
                 Section::make('Dokumen Template')
-                    ->description('Upload file dokumen template surat (PDF/DOCX).')
+                    ->description('Upload file template DOCX yang akan diproses menjadi surat PDF.')
                     ->schema([
                         FileUpload::make('document_path')
                             ->label('File Template')
                             ->required()
-                            ->acceptedFileTypes(['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'])
+                            ->acceptedFileTypes(['application/vnd.openxmlformats-officedocument.wordprocessingml.document'])
                             ->directory('letter-templates')
                             ->visibility('private')
                             ->maxSize(10240), // 10 MB

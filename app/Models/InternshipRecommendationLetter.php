@@ -17,6 +17,7 @@ class InternshipRecommendationLetter extends Model
         'phone_number',
         'letter_date',
         'letter_number',
+        'pdf_path',
         'public_token',
     ];
 
