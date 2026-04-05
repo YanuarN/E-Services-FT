@@ -39,4 +39,16 @@ class ExamPermissionLetterDocumentService extends UniversalLetterService
         /** @var ExamPermissionLetter $letter */
         return ['surat-izin-ujian', $letter->name, $letter->nim];
     }
+
+    protected function verificationFields(Model $letter): array
+    {
+        /** @var ExamPermissionLetter $letter */
+        return [
+            $this->makeVerificationField('Nama Mahasiswa', $letter->name),
+            $this->makeVerificationField('NIM', $letter->nim),
+            $this->makeVerificationField('Ujian', $letter->exam),
+            $this->makeVerificationField('Semester', $letter->semester),
+            $this->makeVerificationField('Tanggal Ujian', $this->formatDate($letter->date)),
+        ];
+    }
 }

@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasPublicToken;
 use Illuminate\Database\Eloquent\Model;
 
 class InternshipRecommendationLetter extends Model
 {
+    use HasPublicToken;
+
     protected $fillable = [
         'status',
         'student_name',

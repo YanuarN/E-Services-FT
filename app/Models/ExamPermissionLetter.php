@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasPublicToken;
 use Illuminate\Database\Eloquent\Model;
 
 class ExamPermissionLetter extends Model
 {
+    use HasPublicToken;
+
     protected $fillable = [
         'status',
         'name',

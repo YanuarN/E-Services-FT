@@ -40,4 +40,17 @@ class ScholarshipsStatementLetterDocumentService extends UniversalLetterService
         /** @var ScholarshipsStatementLetter $letter */
         return ['surat-keterangan-beasiswa', $letter->student_name, $letter->nim];
     }
+
+    protected function verificationFields(Model $letter): array
+    {
+        /** @var ScholarshipsStatementLetter $letter */
+        return [
+            $this->makeVerificationField('Nama Mahasiswa', $letter->student_name),
+            $this->makeVerificationField('NIM', $letter->nim),
+            $this->makeVerificationField('Program Studi', $letter->study_program),
+            $this->makeVerificationField('Nomor Telepon', $letter->phone_number),
+            $this->makeVerificationField('Nama Beasiswa', $letter->scolarship_name),
+            $this->makeVerificationField('Penyedia Beasiswa', $letter->scolarship_provider),
+        ];
+    }
 }

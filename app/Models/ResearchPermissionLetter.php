@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasPublicToken;
 use Illuminate\Database\Eloquent\Model;
 
 class ResearchPermissionLetter extends Model
 {
+    use HasPublicToken;
+
     protected $table = 'research_permisson_letter';
 
     protected $fillable = [

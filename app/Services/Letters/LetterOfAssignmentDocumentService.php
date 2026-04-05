@@ -64,4 +64,18 @@ class LetterOfAssignmentDocumentService extends UniversalLetterService
         /** @var LetterOfAssignment $letter */
         return ['surat-tugas-kelompok', $letter->id, $letter->number];
     }
+
+    protected function verificationFields(Model $letter): array
+    {
+        /** @var LetterOfAssignment $letter */
+        $students = $this->normalizePeople($letter->student_list ?? []);
+
+        return [
+            $this->makeVerificationField('Nomor Permohonan', $letter->number),
+            $this->makeVerificationField('Tanggal Kegiatan', $this->formatDate($letter->date)),
+            $this->makeVerificationField('Waktu', $this->formatTime($letter->time)),
+            $this->makeVerificationField('Tempat', $letter->place),
+            $this->makeVerificationField('Daftar Mahasiswa', $this->buildPeopleSummary($students)),
+        ];
+    }
 }

@@ -40,4 +40,17 @@ class TestingPermissionRequestLetterDocumentService extends UniversalLetterServi
         /** @var TestingPermissionRequestLetter $letter */
         return ['surat-izin-pengujian-alat', $letter->student_name, $letter->nim];
     }
+
+    protected function verificationFields(Model $letter): array
+    {
+        /** @var TestingPermissionRequestLetter $letter */
+        return [
+            $this->makeVerificationField('Nama Mahasiswa', $letter->student_name),
+            $this->makeVerificationField('NIM', $letter->nim),
+            $this->makeVerificationField('Program Studi', $letter->study_program),
+            $this->makeVerificationField('Nomor Telepon', $letter->phone_number),
+            $this->makeVerificationField('Nama Instansi', $letter->company_name),
+            $this->makeVerificationField('Alamat Instansi', $letter->company_address),
+        ];
+    }
 }

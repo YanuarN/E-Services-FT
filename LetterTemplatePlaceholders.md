@@ -29,6 +29,18 @@ Placeholder ini tersedia di semua surat:
 - `${tahun}`
 - `${status}`
 - `${public_token}`
+- `${verification_url}`
+
+Placeholder image QR yang didukung di semua surat:
+
+- `${qr_code}`
+- `${verification_qr_code}`
+
+Catatan:
+
+- Sisipkan `${qr_code}` atau `${verification_qr_code}` pada template DOCX di area tempat QR ingin ditampilkan
+- Service akan mengganti placeholder tersebut menjadi gambar QR code saat dokumen digenerate
+- `${verification_url}` bisa dipakai sebagai teks pendamping di bawah QR code bila diperlukan
 
 ## Placeholder Identitas Mahasiswa
 

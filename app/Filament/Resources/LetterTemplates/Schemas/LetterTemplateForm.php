@@ -27,7 +27,7 @@ class LetterTemplateForm
                     ->columns(1),
 
                 Section::make('Dokumen Template')
-                    ->description('Upload file template DOCX yang akan diproses menjadi surat PDF.')
+                    ->description('Upload file template DOCX yang akan diproses menjadi surat PDF. Gunakan placeholder ${qr_code} untuk QR verifikasi dan ${verification_url} jika ingin menampilkan tautannya sebagai teks.')
                     ->schema([
                         FileUpload::make('document_path')
                             ->label('File Template')

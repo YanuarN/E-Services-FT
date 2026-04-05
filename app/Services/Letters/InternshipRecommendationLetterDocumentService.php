@@ -41,4 +41,18 @@ class InternshipRecommendationLetterDocumentService extends UniversalLetterServi
         /** @var InternshipRecommendationLetter $letter */
         return ['surat-rekomendasi-magang', $letter->student_name, $letter->nim];
     }
+
+    protected function verificationFields(Model $letter): array
+    {
+        /** @var InternshipRecommendationLetter $letter */
+        return [
+            $this->makeVerificationField('Nama Mahasiswa', $letter->student_name),
+            $this->makeVerificationField('NIM', $letter->nim),
+            $this->makeVerificationField('Program Studi', $letter->study_program),
+            $this->makeVerificationField('Semester', $letter->semester),
+            $this->makeVerificationField('IPK', $letter->ipk),
+            $this->makeVerificationField('Program Magang', $letter->program_name),
+            $this->makeVerificationField('Nomor Telepon', $letter->phone_number),
+        ];
+    }
 }

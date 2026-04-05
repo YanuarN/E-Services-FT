@@ -3,6 +3,7 @@
 namespace App\Services\Letters;
 
 use App\Models\LetterTemplate;
+use App\Services\QrCodeService;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
@@ -75,6 +76,7 @@ abstract class UniversalLetterService
     protected function baseLetterPayload(Model $letter): array
     {
         $letterDate = $this->resolveDate($letter->getAttribute('letter_date')) ?? now();
+        $publicToken = app(DocumentVerificationService::class)->ensurePublicToken($letter);
 
         return [
             'nomor_surat' => (string) ($letter->getAttribute('letter_number') ?? ''),
@@ -85,7 +87,8 @@ abstract class UniversalLetterService
             'bulan' => $letterDate->locale('id')->translatedFormat('F'),
             'tahun' => (string) $letterDate->year,
             'status' => (string) ($letter->getAttribute('status') ?? ''),
-            'public_token' => (string) ($letter->getAttribute('public_token') ?? ''),
+            'public_token' => $publicToken,
+            'verification_url' => $this->buildVerificationUrl($letter),
         ];
     }
 
@@ -197,23 +200,61 @@ abstract class UniversalLetterService
         ];
     }
 
+    final public function buildVerificationData(Model $letter): array
+    {
+        $this->assertSupportedModel($letter);
+
+        return [
+            'title' => $this->letterLabel(),
+            'status' => (string) ($letter->getAttribute('status') ?? ''),
+            'fields' => collect([
+                $this->makeVerificationField('Nomor Surat', $letter->getAttribute('letter_number')),
+                $this->makeVerificationField('Tanggal Surat', $this->formatDate($letter->getAttribute('letter_date'))),
+                $this->makeVerificationField('Token Verifikasi', $letter->getAttribute('public_token')),
+                ...$this->verificationFields($letter),
+            ])
+                ->filter(fn (array $field): bool => filled($field['value']))
+                ->values()
+                ->all(),
+        ];
+    }
+
+    protected function verificationFields(Model $letter): array
+    {
+        return [];
+    }
+
+    protected function makeVerificationField(string $label, mixed $value): array
+    {
+        return [
+            'label' => $label,
+            'value' => $this->normalizePlaceholderValue($value),
+        ];
+    }
+
     private function buildWordDocument(Model $letter, ?LetterTemplate $template = null): string
     {
         $template ??= $this->resolveTemplate();
 
         $templatePath = $this->resolveTemplatePath($template);
         $processor = new TemplateProcessor($templatePath);
+        $temporaryQrPath = $this->generateQrCodePath($letter);
 
-        $this->applyRowCollections($processor, $this->buildRowCollections($letter));
+        try {
+            $this->applyRowCollections($processor, $this->buildRowCollections($letter));
+            $this->applyQrCodeImage($processor, $temporaryQrPath);
 
-        foreach ($this->buildTemplatePayload($letter) as $key => $value) {
-            $processor->setValue($key, $this->normalizePlaceholderValue($value));
+            foreach ($this->buildTemplatePayload($letter) as $key => $value) {
+                $processor->setValue($key, $this->normalizePlaceholderValue($value));
+            }
+
+            $temporaryWordPath = $this->temporaryFilePath($this->getWordFilename($letter));
+            $processor->saveAs($temporaryWordPath);
+
+            return $temporaryWordPath;
+        } finally {
+            $this->cleanupTemporaryFile($temporaryQrPath);
         }
-
-        $temporaryWordPath = $this->temporaryFilePath($this->getWordFilename($letter));
-        $processor->saveAs($temporaryWordPath);
-
-        return $temporaryWordPath;
     }
 
     private function resolveTemplate(): LetterTemplate
@@ -359,6 +400,19 @@ abstract class UniversalLetterService
         return (string) ($value ?? '');
     }
 
+    private function applyQrCodeImage(TemplateProcessor $processor, ?string $path): void
+    {
+        if (! $path || ! file_exists($path)) {
+            return;
+        }
+
+        $processor->setImageValue(['qr_code', 'verification_qr_code'], [
+            'path' => $path,
+            'width' => 110,
+            'height' => 110,
+        ]);
+    }
+
     private function buildFilename(Model $letter, string $extension): string
     {
         $parts = collect($this->buildFilenameParts($letter))
@@ -374,6 +428,28 @@ abstract class UniversalLetterService
         }
 
         return "{$basename}.{$extension}";
+    }
+
+    private function buildVerificationUrl(Model $letter): string
+    {
+        return app(DocumentVerificationService::class)
+            ->buildVerificationUrl($this->letterType(), $letter);
+    }
+
+    private function generateQrCodePath(Model $letter): ?string
+    {
+        $verificationUrl = $this->buildVerificationUrl($letter);
+
+        if (blank($verificationUrl)) {
+            return null;
+        }
+
+        return app(QrCodeService::class)->generateLetterQrCode($verificationUrl);
+    }
+
+    private function letterLabel(): string
+    {
+        return app(DocumentVerificationService::class)->letterLabel($this->letterType());
     }
 
     private function temporaryFilePath(string $filename): string

@@ -40,4 +40,16 @@ class PassportApplicationLetterDocumentService extends UniversalLetterService
         /** @var PassportApplicationLetter $letter */
         return ['surat-pengantar-paspor', $letter->student_name, $letter->nim];
     }
+
+    protected function verificationFields(Model $letter): array
+    {
+        /** @var PassportApplicationLetter $letter */
+        return [
+            $this->makeVerificationField('Nama Mahasiswa', $letter->student_name),
+            $this->makeVerificationField('NIM', $letter->nim),
+            $this->makeVerificationField('Program Studi', $letter->study_program),
+            $this->makeVerificationField('Nomor Telepon', $letter->phone_number),
+            $this->makeVerificationField('Nama Kegiatan', $letter->event_name),
+        ];
+    }
 }

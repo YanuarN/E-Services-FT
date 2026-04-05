@@ -42,4 +42,20 @@ class LetterOfAssignmentIndividualDocumentService extends UniversalLetterService
         /** @var LetterOfAssignmentIndividual $letter */
         return ['surat-tugas-individual', $letter->name, $letter->nim];
     }
+
+    protected function verificationFields(Model $letter): array
+    {
+        /** @var LetterOfAssignmentIndividual $letter */
+        return [
+            $this->makeVerificationField('Nama Mahasiswa', $letter->name),
+            $this->makeVerificationField('NIM', $letter->nim),
+            $this->makeVerificationField('Nomor Permohonan', $letter->number),
+            $this->makeVerificationField('Departemen', $letter->departement),
+            $this->makeVerificationField('Fakultas', $letter->faculty),
+            $this->makeVerificationField('Alamat', $letter->address),
+            $this->makeVerificationField('Penugasan', $letter->assignment),
+            $this->makeVerificationField('Tempat', $letter->place),
+            $this->makeVerificationField('Tanggal Kegiatan', $this->formatDate($letter->date)),
+        ];
+    }
 }

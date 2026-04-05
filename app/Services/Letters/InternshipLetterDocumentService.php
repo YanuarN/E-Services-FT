@@ -68,4 +68,20 @@ class InternshipLetterDocumentService extends UniversalLetterService
         /** @var InternshipLetter $letter */
         return ['surat-pkn', $letter->student_name, $letter->nim];
     }
+
+    protected function verificationFields(Model $letter): array
+    {
+        /** @var InternshipLetter $letter */
+        $members = $this->normalizePeople($letter->group_member ?? []);
+
+        return [
+            $this->makeVerificationField('Nama Mahasiswa', $letter->student_name),
+            $this->makeVerificationField('NIM', $letter->nim),
+            $this->makeVerificationField('Program Studi', $letter->study_program),
+            $this->makeVerificationField('Nomor Telepon', $letter->phone_number),
+            $this->makeVerificationField('Nama Perusahaan', $letter->company_name),
+            $this->makeVerificationField('Alamat Perusahaan', $letter->company_address),
+            $this->makeVerificationField('Anggota Kelompok', $this->buildPeopleSummary($members)),
+        ];
+    }
 }
