@@ -15,15 +15,14 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('nim');
-            $table->string('number');
             $table->string('exam');
             $table->string('semester');
             $table->date('date');
             $table->enum('status', ['SUBMITTED', 'APPROVE', 'REJECT'])->default('SUBMITTED');
-            $table->string('letter_number');
-            $table->date('letter_date');
-            $table->string('pdf_path');
-            $table->string('public_token')->unique();
+            $table->string('letter_number')->nullable();
+            $table->date('letter_date')->nullable();
+            $table->string('pdf_path')->nullable();
+            $table->string('public_token')->nullable()->unique();
             $table->timestamps();
 
             $table->index('public_token');

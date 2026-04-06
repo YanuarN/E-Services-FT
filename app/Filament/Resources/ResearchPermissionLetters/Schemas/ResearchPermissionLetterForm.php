@@ -2,9 +2,9 @@
 
 namespace App\Filament\Resources\ResearchPermissionLetters\Schemas;
 
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Select;
+use App\Filament\Support\LetterFormComponents;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
@@ -14,24 +14,35 @@ class ResearchPermissionLetterForm
     {
         return $schema
             ->components([
-                Section::make('Manajemen Surat')
-                    ->description('Kelola status dan metadata penerbitan surat.')
+                Section::make('Data Mahasiswa')
                     ->schema([
-                        Select::make('status')
-                            ->label('Status')
-                            ->options([
-                                'SUBMITTED' => 'SUBMITTED',
-                                'APPROVE' => 'APPROVE',
-                                'REJECT' => 'REJECT',
-                            ])
+                        TextInput::make('student_name')
+                            ->label('Nama Mahasiswa')
                             ->required(),
-                        TextInput::make('letter_number')
-                            ->label('Nomor Surat')
+                        TextInput::make('nim')
+                            ->label('NIM')
+                            ->required()
                             ->maxLength(255),
-                        DatePicker::make('letter_date')
-                            ->label('Tanggal Surat'),
+                        TextInput::make('study_program')
+                            ->label('Program Studi')
+                            ->required()
+                            ->maxLength(255),
+                        TextInput::make('phone_number')
+                            ->label('Nomor Telepon')
+                            ->required()
+                            ->maxLength(255),
+                        TextInput::make('company_name')
+                            ->label('Instansi')
+                            ->required()
+                            ->maxLength(255),
+                        Textarea::make('company_address')
+                            ->label('Alamat Instansi')
+                            ->required()
+                            ->rows(3)
+                            ->columnSpanFull(),
                     ])
-                    ->columns(3),
+                    ->columns(2),
+                LetterFormComponents::managementSection(),
             ]);
     }
 }

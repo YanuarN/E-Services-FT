@@ -136,6 +136,26 @@ class DocumentVerificationService
     }
 
     /**
+     * @return array{letter_type: string, model: class-string<Model>, service: class-string<UniversalLetterService>}
+     */
+    public function definitionForLetter(Model $letter): array
+    {
+        foreach ($this->definitions() as $letterType => $definition) {
+            if ($letter instanceof $definition['model']) {
+                return [
+                    'letter_type' => $letterType,
+                    ...$definition,
+                ];
+            }
+        }
+
+        throw new RuntimeException(sprintf(
+            'Model surat %s belum terdaftar untuk workflow dokumen.',
+            $letter::class,
+        ));
+    }
+
+    /**
      * @return array{model: class-string<Model>, service: class-string<UniversalLetterService>}
      */
     private function definition(string $letterType): array

@@ -17,7 +17,6 @@ class LetterOfAssignment extends Model
         'student_list',
         'letter_number',
         'letter_date',
-        'number',
         'pdf_path',
         'public_token',
     ];

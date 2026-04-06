@@ -26,7 +26,6 @@ class ExamPermissionLetterDocumentService extends UniversalLetterService
             $this->baseLetterPayload($letter),
             $this->studentIdentityPayload($letter->name, $letter->nim),
             [
-                'nomor_permohonan' => $letter->number,
                 'ujian' => $letter->exam,
                 'semester' => $letter->semester,
                 'tanggal_ujian' => $examDate,

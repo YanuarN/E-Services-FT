@@ -18,11 +18,10 @@ return new class extends Migration
             $table->string('place');
             $table->json('student_list');
             $table->enum('status', ['SUBMITTED', 'APPROVE', 'REJECT'])->default('SUBMITTED');
-            $table->string('letter_number');
-            $table->date('letter_date');
-            $table->string('number');
-            $table->string('pdf_path');
-            $table->string('public_token')->unique();
+            $table->string('letter_number')->nullable();
+            $table->date('letter_date')->nullable();
+            $table->string('pdf_path')->nullable();
+            $table->string('public_token')->nullable()->unique();
             $table->timestamps();
 
             $table->index('public_token');

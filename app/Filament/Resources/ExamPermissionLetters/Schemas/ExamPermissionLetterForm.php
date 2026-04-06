@@ -2,8 +2,8 @@
 
 namespace App\Filament\Resources\ExamPermissionLetters\Schemas;
 
+use App\Filament\Support\LetterFormComponents;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -14,24 +14,29 @@ class ExamPermissionLetterForm
     {
         return $schema
             ->components([
-                Section::make('Manajemen Surat')
-                    ->description('Kelola status dan metadata penerbitan surat.')
+                Section::make('Data Surat')
                     ->schema([
-                        Select::make('status')
-                            ->label('Status')
-                            ->options([
-                                'SUBMITTED' => 'SUBMITTED',
-                                'APPROVE' => 'APPROVE',
-                                'REJECT' => 'REJECT',
-                            ])
+                        TextInput::make('name')
+                            ->label('Nama')
                             ->required(),
-                        TextInput::make('letter_number')
-                            ->label('Nomor Surat')
+                        TextInput::make('nim')
+                            ->label('NIM')
+                            ->required()
                             ->maxLength(255),
-                        DatePicker::make('letter_date')
-                            ->label('Tanggal Surat'),
+                        TextInput::make('exam')
+                            ->label('Jenis Ujian')
+                            ->required()
+                            ->maxLength(255),
+                        TextInput::make('semester')
+                            ->label('Semester')
+                            ->required()
+                            ->maxLength(255),
+                        DatePicker::make('date')
+                            ->label('Tanggal Ujian')
+                            ->required(),
                     ])
-                    ->columns(3),
+                    ->columns(2),
+                LetterFormComponents::managementSection(),
             ]);
     }
 }

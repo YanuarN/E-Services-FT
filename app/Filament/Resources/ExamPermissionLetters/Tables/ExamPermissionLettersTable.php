@@ -2,10 +2,10 @@
 
 namespace App\Filament\Resources\ExamPermissionLetters\Tables;
 
+use App\Filament\Resources\ExamPermissionLetters\ExamPermissionLetterResource;
+use App\Filament\Support\LetterTableActions;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -16,8 +16,20 @@ class ExamPermissionLettersTable
     {
         return $table
             ->columns([
-                TextColumn::make('id')
-                    ->label('ID')
+                TextColumn::make('name')
+                    ->label('Nama')
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('nim')
+                    ->label('NIM')
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('exam')
+                    ->label('Jenis Ujian')
+                    ->searchable()
+                    ->wrap(),
+                TextColumn::make('semester')
+                    ->label('Semester')
                     ->sortable(),
                 TextColumn::make('status')
                     ->label('Status')
@@ -28,18 +40,6 @@ class ExamPermissionLettersTable
                         default => 'warning',
                     })
                     ->sortable(),
-                TextColumn::make('letter_number')
-                    ->label('Nomor Surat')
-                    ->searchable()
-                    ->toggleable(),
-                TextColumn::make('letter_date')
-                    ->label('Tanggal Surat')
-                    ->date('d M Y')
-                    ->sortable(),
-                TextColumn::make('public_token')
-                    ->label('Public Token')
-                    ->limit(24)
-                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('created_at')
                     ->label('Dibuat')
                     ->dateTime('d M Y H:i')
@@ -53,9 +53,10 @@ class ExamPermissionLettersTable
                         'REJECT' => 'REJECT',
                     ]),
             ])
+            ->recordUrl(fn ($record): string => ExamPermissionLetterResource::getUrl('edit', ['record' => $record]))
             ->recordActions([
-                ViewAction::make(),
-                EditAction::make(),
+                LetterTableActions::accept(),
+                LetterTableActions::reject(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

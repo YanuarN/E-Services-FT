@@ -18,11 +18,11 @@ return new class extends Migration
             $table->string('nim');
             $table->string('phone_number');
             $table->string('event_name');
-            $table->string('letter_number');
-            $table->date('letter_date');
+            $table->string('letter_number')->nullable();
+            $table->date('letter_date')->nullable();
             $table->enum('status', ['SUBMITTED', 'APPROVE', 'REJECT'])->default('SUBMITTED');
-            $table->string('public_token')->unique();
-            $table->string('pdf_path');
+            $table->string('public_token')->nullable()->unique();
+            $table->string('pdf_path')->nullable();
             $table->timestamps();
 
             $table->index('public_token');

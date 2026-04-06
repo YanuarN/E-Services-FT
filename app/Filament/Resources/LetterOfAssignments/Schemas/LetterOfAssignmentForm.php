@@ -2,9 +2,10 @@
 
 namespace App\Filament\Resources\LetterOfAssignments\Schemas;
 
+use App\Filament\Support\LetterFormComponents;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\TimePicker;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
@@ -14,24 +15,22 @@ class LetterOfAssignmentForm
     {
         return $schema
             ->components([
-                Section::make('Manajemen Surat')
-                    ->description('Kelola status dan metadata penerbitan surat.')
+                Section::make('Data Kegiatan')
                     ->schema([
-                        Select::make('status')
-                            ->label('Status')
-                            ->options([
-                                'SUBMITTED' => 'SUBMITTED',
-                                'APPROVE' => 'APPROVE',
-                                'REJECT' => 'REJECT',
-                            ])
+                        DatePicker::make('date')
+                            ->label('Tanggal Kegiatan')
                             ->required(),
-                        TextInput::make('letter_number')
-                            ->label('Nomor Surat')
+                        TimePicker::make('time')
+                            ->label('Waktu')
+                            ->seconds(false),
+                        TextInput::make('place')
+                            ->label('Tempat')
+                            ->required()
                             ->maxLength(255),
-                        DatePicker::make('letter_date')
-                            ->label('Tanggal Surat'),
+                        LetterFormComponents::memberRepeater('student_list', 'Daftar Mahasiswa'),
                     ])
-                    ->columns(3),
+                    ->columns(2),
+                LetterFormComponents::managementSection(),
             ]);
     }
 }

@@ -3,19 +3,9 @@
 namespace App\Filament\Resources\LetterOfAssignmentIndividuals\Pages;
 
 use App\Filament\Resources\LetterOfAssignmentIndividuals\LetterOfAssignmentIndividualResource;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\ViewAction;
-use Filament\Resources\Pages\EditRecord;
+use App\Filament\Resources\Pages\EditLetterRecord;
 
-class EditLetterOfAssignmentIndividual extends EditRecord
+class EditLetterOfAssignmentIndividual extends EditLetterRecord
 {
     protected static string $resource = LetterOfAssignmentIndividualResource::class;
-
-    protected function getHeaderActions(): array
-    {
-        return [
-            ViewAction::make(),
-            DeleteAction::make(),
-        ];
-    }
 }

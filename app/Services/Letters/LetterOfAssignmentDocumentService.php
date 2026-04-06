@@ -26,7 +26,6 @@ class LetterOfAssignmentDocumentService extends UniversalLetterService
         return array_merge(
             $this->baseLetterPayload($letter),
             [
-                'nomor_permohonan' => $letter->number,
                 'tanggal_kegiatan' => $assignmentDate,
                 'waktu' => $this->formatTime($letter->time),
                 'tempat' => $letter->place,
@@ -62,7 +61,7 @@ class LetterOfAssignmentDocumentService extends UniversalLetterService
     protected function buildFilenameParts(Model $letter): array
     {
         /** @var LetterOfAssignment $letter */
-        return ['surat-tugas-kelompok', $letter->id, $letter->number];
+        return ['surat-tugas-kelompok', $letter->id, $letter->letter_number ?: 'draft'];
     }
 
     protected function verificationFields(Model $letter): array
@@ -71,7 +70,6 @@ class LetterOfAssignmentDocumentService extends UniversalLetterService
         $students = $this->normalizePeople($letter->student_list ?? []);
 
         return [
-            $this->makeVerificationField('Nomor Permohonan', $letter->number),
             $this->makeVerificationField('Tanggal Kegiatan', $this->formatDate($letter->date)),
             $this->makeVerificationField('Waktu', $this->formatTime($letter->time)),
             $this->makeVerificationField('Tempat', $letter->place),

@@ -3,19 +3,9 @@
 namespace App\Filament\Resources\ScholarshipsStatementLetters\Pages;
 
 use App\Filament\Resources\ScholarshipsStatementLetters\ScholarshipsStatementLetterResource;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\ViewAction;
-use Filament\Resources\Pages\EditRecord;
+use App\Filament\Resources\Pages\EditLetterRecord;
 
-class EditScholarshipsStatementLetter extends EditRecord
+class EditScholarshipsStatementLetter extends EditLetterRecord
 {
     protected static string $resource = ScholarshipsStatementLetterResource::class;
-
-    protected function getHeaderActions(): array
-    {
-        return [
-            ViewAction::make(),
-            DeleteAction::make(),
-        ];
-    }
 }

@@ -3,19 +3,9 @@
 namespace App\Filament\Resources\ExamPermissionLetters\Pages;
 
 use App\Filament\Resources\ExamPermissionLetters\ExamPermissionLetterResource;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\ViewAction;
-use Filament\Resources\Pages\EditRecord;
+use App\Filament\Resources\Pages\EditLetterRecord;
 
-class EditExamPermissionLetter extends EditRecord
+class EditExamPermissionLetter extends EditLetterRecord
 {
     protected static string $resource = ExamPermissionLetterResource::class;
-
-    protected function getHeaderActions(): array
-    {
-        return [
-            ViewAction::make(),
-            DeleteAction::make(),
-        ];
-    }
 }

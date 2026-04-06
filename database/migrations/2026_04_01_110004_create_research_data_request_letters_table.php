@@ -20,10 +20,10 @@ return new class extends Migration
             $table->string('company_name');
             $table->text('company_address');
             $table->enum('status', ['SUBMITTED', 'APPROVE', 'REJECT'])->default('SUBMITTED');
-            $table->date('letter_date');
-            $table->string('letter_number');
-            $table->string('pdf_path');
-            $table->string('public_token')->unique();
+            $table->date('letter_date')->nullable();
+            $table->string('letter_number')->nullable();
+            $table->string('pdf_path')->nullable();
+            $table->string('public_token')->nullable()->unique();
             $table->timestamps();
 
             $table->index('public_token');

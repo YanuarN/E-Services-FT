@@ -81,6 +81,7 @@ abstract class UniversalLetterService
         return [
             'nomor_surat' => (string) ($letter->getAttribute('letter_number') ?? ''),
             'no_surat' => (string) ($letter->getAttribute('letter_number') ?? ''),
+            'nomor_permohonan' => (string) ($letter->getAttribute('letter_number') ?? ''),
             'tanggal_surat' => $this->formatDate($letterDate),
             'tanggal' => $this->formatDate($letterDate),
             'hari' => $letterDate->locale('id')->translatedFormat('l'),

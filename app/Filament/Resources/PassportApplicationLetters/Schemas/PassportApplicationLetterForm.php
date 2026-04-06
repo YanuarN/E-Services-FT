@@ -2,8 +2,7 @@
 
 namespace App\Filament\Resources\PassportApplicationLetters\Schemas;
 
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Select;
+use App\Filament\Support\LetterFormComponents;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -14,24 +13,30 @@ class PassportApplicationLetterForm
     {
         return $schema
             ->components([
-                Section::make('Manajemen Surat')
-                    ->description('Kelola status dan metadata penerbitan surat.')
+                Section::make('Data Mahasiswa')
                     ->schema([
-                        Select::make('status')
-                            ->label('Status')
-                            ->options([
-                                'SUBMITTED' => 'SUBMITTED',
-                                'APPROVE' => 'APPROVE',
-                                'REJECT' => 'REJECT',
-                            ])
+                        TextInput::make('student_name')
+                            ->label('Nama Mahasiswa')
                             ->required(),
-                        TextInput::make('letter_number')
-                            ->label('Nomor Surat')
+                        TextInput::make('study_program')
+                            ->label('Program Studi')
+                            ->required()
                             ->maxLength(255),
-                        DatePicker::make('letter_date')
-                            ->label('Tanggal Surat'),
+                        TextInput::make('nim')
+                            ->label('NIM')
+                            ->required()
+                            ->maxLength(255),
+                        TextInput::make('phone_number')
+                            ->label('Nomor Telepon')
+                            ->required()
+                            ->maxLength(255),
+                        TextInput::make('event_name')
+                            ->label('Keperluan')
+                            ->required()
+                            ->maxLength(255),
                     ])
-                    ->columns(3),
+                    ->columns(2),
+                LetterFormComponents::managementSection(),
             ]);
     }
 }

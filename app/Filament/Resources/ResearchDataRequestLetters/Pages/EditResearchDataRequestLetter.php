@@ -3,19 +3,9 @@
 namespace App\Filament\Resources\ResearchDataRequestLetters\Pages;
 
 use App\Filament\Resources\ResearchDataRequestLetters\ResearchDataRequestLetterResource;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\ViewAction;
-use Filament\Resources\Pages\EditRecord;
+use App\Filament\Resources\Pages\EditLetterRecord;
 
-class EditResearchDataRequestLetter extends EditRecord
+class EditResearchDataRequestLetter extends EditLetterRecord
 {
     protected static string $resource = ResearchDataRequestLetterResource::class;
-
-    protected function getHeaderActions(): array
-    {
-        return [
-            ViewAction::make(),
-            DeleteAction::make(),
-        ];
-    }
 }

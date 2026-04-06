@@ -26,7 +26,6 @@ class DocumentVerificationTest extends TestCase
             'date' => '2026-04-10',
             'letter_number' => 'FT/001/IV/2026',
             'letter_date' => '2026-04-09',
-            'number' => 'REQ-001',
             'pdf_path' => 'generated-letters/exam/test.pdf',
         ]);
 
@@ -86,7 +85,6 @@ class DocumentVerificationTest extends TestCase
             'date' => '2026-04-12',
             'letter_number' => 'FT/090/IV/2026',
             'letter_date' => '2026-04-11',
-            'number' => 'REQ-090',
             'pdf_path' => 'generated-letters/exam/test.pdf',
         ]);
 

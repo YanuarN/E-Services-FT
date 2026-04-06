@@ -2,10 +2,10 @@
 
 namespace App\Filament\Resources\InternshipLetters\Tables;
 
+use App\Filament\Resources\InternshipLetters\InternshipLetterResource;
+use App\Filament\Support\LetterTableActions;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -16,9 +16,22 @@ class InternshipLettersTable
     {
         return $table
             ->columns([
-                TextColumn::make('id')
-                    ->label('ID')
+                TextColumn::make('student_name')
+                    ->label('Nama')
+                    ->searchable()
                     ->sortable(),
+                TextColumn::make('nim')
+                    ->label('NIM')
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('study_program')
+                    ->label('Program Studi')
+                    ->searchable()
+                    ->wrap(),
+                TextColumn::make('company_name')
+                    ->label('Instansi')
+                    ->searchable()
+                    ->wrap(),
                 TextColumn::make('status')
                     ->label('Status')
                     ->badge()
@@ -28,18 +41,6 @@ class InternshipLettersTable
                         default => 'warning',
                     })
                     ->sortable(),
-                TextColumn::make('letter_number')
-                    ->label('Nomor Surat')
-                    ->searchable()
-                    ->toggleable(),
-                TextColumn::make('letter_date')
-                    ->label('Tanggal Surat')
-                    ->date('d M Y')
-                    ->sortable(),
-                TextColumn::make('public_token')
-                    ->label('Public Token')
-                    ->limit(24)
-                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('created_at')
                     ->label('Dibuat')
                     ->dateTime('d M Y H:i')
@@ -53,9 +54,10 @@ class InternshipLettersTable
                         'REJECT' => 'REJECT',
                     ]),
             ])
+            ->recordUrl(fn ($record): string => InternshipLetterResource::getUrl('edit', ['record' => $record]))
             ->recordActions([
-                ViewAction::make(),
-                EditAction::make(),
+                LetterTableActions::accept(),
+                LetterTableActions::reject(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

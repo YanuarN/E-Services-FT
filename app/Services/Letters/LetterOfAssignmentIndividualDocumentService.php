@@ -26,7 +26,6 @@ class LetterOfAssignmentIndividualDocumentService extends UniversalLetterService
             $this->baseLetterPayload($letter),
             $this->studentIdentityPayload($letter->name, $letter->nim),
             [
-                'nomor_permohonan' => $letter->number,
                 'departement' => $letter->departement,
                 'fakultas' => $letter->faculty,
                 'alamat' => $letter->address,
@@ -49,7 +48,6 @@ class LetterOfAssignmentIndividualDocumentService extends UniversalLetterService
         return [
             $this->makeVerificationField('Nama Mahasiswa', $letter->name),
             $this->makeVerificationField('NIM', $letter->nim),
-            $this->makeVerificationField('Nomor Permohonan', $letter->number),
             $this->makeVerificationField('Departemen', $letter->departement),
             $this->makeVerificationField('Fakultas', $letter->faculty),
             $this->makeVerificationField('Alamat', $letter->address),

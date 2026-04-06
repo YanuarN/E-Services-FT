@@ -2,9 +2,10 @@
 
 namespace App\Filament\Resources\LetterOfAssignmentIndividuals\Schemas;
 
+use App\Filament\Support\LetterFormComponents;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
@@ -14,24 +15,43 @@ class LetterOfAssignmentIndividualForm
     {
         return $schema
             ->components([
-                Section::make('Manajemen Surat')
-                    ->description('Kelola status dan metadata penerbitan surat.')
+                Section::make('Data Mahasiswa')
                     ->schema([
-                        Select::make('status')
-                            ->label('Status')
-                            ->options([
-                                'SUBMITTED' => 'SUBMITTED',
-                                'APPROVE' => 'APPROVE',
-                                'REJECT' => 'REJECT',
-                            ])
+                        TextInput::make('name')
+                            ->label('Nama')
                             ->required(),
-                        TextInput::make('letter_number')
-                            ->label('Nomor Surat')
+                        TextInput::make('nim')
+                            ->label('NIM')
+                            ->required()
                             ->maxLength(255),
-                        DatePicker::make('letter_date')
-                            ->label('Tanggal Surat'),
+                        TextInput::make('departement')
+                            ->label('Jurusan')
+                            ->required()
+                            ->maxLength(255),
+                        TextInput::make('faculty')
+                            ->label('Fakultas')
+                            ->required()
+                            ->maxLength(255),
+                        Textarea::make('address')
+                            ->label('Alamat')
+                            ->required()
+                            ->rows(3)
+                            ->columnSpanFull(),
+                        Textarea::make('assignment')
+                            ->label('Penugasan')
+                            ->required()
+                            ->rows(3)
+                            ->columnSpanFull(),
+                        TextInput::make('place')
+                            ->label('Tempat')
+                            ->required()
+                            ->maxLength(255),
+                        DatePicker::make('date')
+                            ->label('Tanggal Kegiatan')
+                            ->required(),
                     ])
-                    ->columns(3),
+                    ->columns(2),
+                LetterFormComponents::managementSection(),
             ]);
     }
 }

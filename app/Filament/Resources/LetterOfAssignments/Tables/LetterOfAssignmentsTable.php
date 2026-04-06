@@ -2,10 +2,10 @@
 
 namespace App\Filament\Resources\LetterOfAssignments\Tables;
 
+use App\Filament\Resources\LetterOfAssignments\LetterOfAssignmentResource;
+use App\Filament\Support\LetterTableActions;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -16,8 +16,27 @@ class LetterOfAssignmentsTable
     {
         return $table
             ->columns([
-                TextColumn::make('id')
-                    ->label('ID')
+                TextColumn::make('student_names')
+                    ->label('Nama Mahasiswa')
+                    ->state(fn ($record): string => collect($record->student_list ?? [])
+                        ->pluck('nama')
+                        ->filter()
+                        ->join(', '))
+                    ->wrap(),
+                TextColumn::make('student_nims')
+                    ->label('NIM')
+                    ->state(fn ($record): string => collect($record->student_list ?? [])
+                        ->pluck('nim')
+                        ->filter()
+                        ->join(', '))
+                    ->wrap(),
+                TextColumn::make('place')
+                    ->label('Tempat')
+                    ->searchable()
+                    ->wrap(),
+                TextColumn::make('date')
+                    ->label('Tanggal')
+                    ->date('d M Y')
                     ->sortable(),
                 TextColumn::make('status')
                     ->label('Status')
@@ -28,18 +47,6 @@ class LetterOfAssignmentsTable
                         default => 'warning',
                     })
                     ->sortable(),
-                TextColumn::make('letter_number')
-                    ->label('Nomor Surat')
-                    ->searchable()
-                    ->toggleable(),
-                TextColumn::make('letter_date')
-                    ->label('Tanggal Surat')
-                    ->date('d M Y')
-                    ->sortable(),
-                TextColumn::make('public_token')
-                    ->label('Public Token')
-                    ->limit(24)
-                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('created_at')
                     ->label('Dibuat')
                     ->dateTime('d M Y H:i')
@@ -53,9 +60,10 @@ class LetterOfAssignmentsTable
                         'REJECT' => 'REJECT',
                     ]),
             ])
+            ->recordUrl(fn ($record): string => LetterOfAssignmentResource::getUrl('edit', ['record' => $record]))
             ->recordActions([
-                ViewAction::make(),
-                EditAction::make(),
+                LetterTableActions::accept(),
+                LetterTableActions::reject(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

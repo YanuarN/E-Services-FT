@@ -62,7 +62,6 @@ Kode template: `exam_permission`
 
 - `${nama_mahasiswa}`
 - `${nim}`
-- `${nomor_permohonan}`
 - `${ujian}`
 - `${semester}`
 - `${tanggal_ujian}`
@@ -128,7 +127,6 @@ Kode template: `letter_of_assignment`
 
 ### Placeholder utama
 
-- `${nomor_permohonan}`
 - `${tanggal_kegiatan}`
 - `${waktu}`
 - `${tempat}`
@@ -163,7 +161,6 @@ Kode template: `letter_of_assignment_individual`
 
 - `${nama_mahasiswa}`
 - `${nim}`
-- `${nomor_permohonan}`
 - `${departement}`
 - `${fakultas}`
 - `${alamat}`
@@ -256,4 +253,5 @@ Kode template: `testing_permission_request`
 - Gunakan placeholder Indonesia yang tercantum di dokumen ini
 - Untuk surat kelompok, cukup buat satu baris template tabel, nanti sistem akan clone otomatis
 - Placeholder umum seperti `${nomor_surat}` dan `${tanggal}` bisa dipakai di header, judul, atau footer surat
+- `${nomor_permohonan}` masih diisi dari `letter_number` untuk kompatibilitas template lama, tetapi placeholder yang disarankan adalah `${nomor_surat}`
 - Jika nanti ada placeholder baru di service, file ini perlu ikut diperbarui agar tim template tetap sinkron

@@ -3,19 +3,9 @@
 namespace App\Filament\Resources\InternshipLetters\Pages;
 
 use App\Filament\Resources\InternshipLetters\InternshipLetterResource;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\ViewAction;
-use Filament\Resources\Pages\EditRecord;
+use App\Filament\Resources\Pages\EditLetterRecord;
 
-class EditInternshipLetter extends EditRecord
+class EditInternshipLetter extends EditLetterRecord
 {
     protected static string $resource = InternshipLetterResource::class;
-
-    protected function getHeaderActions(): array
-    {
-        return [
-            ViewAction::make(),
-            DeleteAction::make(),
-        ];
-    }
 }

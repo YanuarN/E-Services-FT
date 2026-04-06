@@ -18,7 +18,6 @@ class ExamPermissionLetter extends Model
         'date',
         'letter_number',
         'letter_date',
-        'number',
         'pdf_path',
         'public_token',
     ];
