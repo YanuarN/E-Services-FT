@@ -6,4 +6,6 @@ export type BookingCalendarProps = {
   onSelectDate: (date: Date | undefined) => void;
   onMonthChange: (month: Date) => void;
   availabilityMap: Record<string, BookingDayAvailability>;
+  isRoomSelected: boolean;
+  selectedRoomLabel?: string;
 };

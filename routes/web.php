@@ -33,11 +33,24 @@ Route::get('/booking', function () {
     $bookings = RoomUsageRequest::query()
         ->whereIn('status', ['PENDING', 'APPROVED'])
         ->orderBy('start_at')
-        ->get(['id', 'room_id', 'room_name', 'start_at', 'end_at', 'status'])
+        ->get([
+            'id',
+            'room_id',
+            'room_name',
+            'student_name',
+            'activity_name',
+            'unit',
+            'start_at',
+            'end_at',
+            'status',
+        ])
         ->map(fn (RoomUsageRequest $booking) => [
             'id' => $booking->id,
             'roomId' => $booking->room_id,
             'roomName' => $booking->room_name ?: optional($booking->room)->name ?: 'Ruangan belum ditentukan',
+            'studentName' => $booking->student_name,
+            'activityName' => $booking->activity_name,
+            'unit' => $booking->unit,
             'start' => $booking->start_at?->toIso8601String(),
             'end' => $booking->end_at?->toIso8601String(),
             'status' => $booking->status,

@@ -1,4 +1,9 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Poppins:wght@400;500;600;700&display=swap');
+
 :root {
+    --soto-font-body: "Poppins", "Segoe UI", sans-serif;
+    --soto-font-heading: "Montserrat", "Poppins", "Segoe UI", sans-serif;
+
     --soto-primary: #2E3A8C;
     --soto-primary-hover: #1F2A66;
     --soto-accent: #F4C430;
@@ -24,6 +29,17 @@
 .fi-body {
     background: radial-gradient(circle at 0 0, color-mix(in oklab, var(--soto-primary) 14%, transparent), transparent 45%), var(--soto-surface);
     color: var(--soto-text);
+    font-family: var(--soto-font-body);
+}
+
+.fi-body * {
+    font-family: var(--soto-font-body);
+}
+
+.fi-page-header-heading,
+.fi-section .fi-section-header-heading,
+.fi-global-search-result-heading {
+    font-family: var(--soto-font-heading);
 }
 
 .fi-topbar,

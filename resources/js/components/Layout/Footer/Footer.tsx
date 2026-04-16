@@ -105,7 +105,7 @@ const Footer: React.FC = () => {
 
       <div className="border-t border-white/10">
         <div className="public-container py-5 text-center text-xs text-white/50">
-          <p>© 2024 FT UMS. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} FT UMS. All rights reserved.</p>
         </div>
       </div>
     </footer>

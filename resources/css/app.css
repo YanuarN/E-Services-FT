@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Poppins:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,6 +6,9 @@
 
 @layer base {
     :root {
+        --public-font-body: "Poppins", "Segoe UI", sans-serif;
+        --public-font-heading: "Montserrat", "Poppins", "Segoe UI", sans-serif;
+
         --public-primary: #2e3a8c;
         --public-primary-hover: #1f2a66;
         --public-accent: #f4c430;
@@ -29,7 +32,7 @@
     body {
         background: var(--public-background);
         color: var(--public-text);
-        font-family: "Quicksand", "Segoe UI", sans-serif;
+        font-family: var(--public-font-body);
     }
 
     h1,
@@ -38,7 +41,7 @@
     h4,
     h5,
     h6 {
-        font-family: "Quicksand", "Segoe UI", sans-serif;
+        font-family: var(--public-font-heading);
     }
 }
 
@@ -156,6 +159,20 @@
         box-shadow: inset 0 0 0 1px rgba(31, 42, 102, 0.14);
     }
 
+    .booking-fc-day-idle {
+        cursor: not-allowed;
+        background:
+            linear-gradient(
+                135deg,
+                rgba(237, 242, 255, 0.45) 0%,
+                rgba(255, 255, 255, 1) 100%
+            );
+    }
+
+    .booking-fc-day-idle:hover {
+        box-shadow: none;
+    }
+
     .booking-fc-day-available {
         background: #ffffff;
     }
@@ -165,7 +182,7 @@
     }
 
     .booking-fc-day-full {
-        background: #f9d8db;
+        background: #ffb3bd;
     }
 
     .booking-fc-day-selected {
@@ -196,6 +213,10 @@
         color: #111827;
     }
 
+    .booking-fc-day-idle .booking-fc-day-number {
+        color: #94a3b8;
+    }
+
     .booking-fc-day-status {
         max-width: 100%;
         font-size: 0.58rem;
@@ -212,7 +233,7 @@
     }
 
     .booking-fc-day-full .booking-fc-day-status {
-        color: #c2333f;
+        color: #b10f2e;
     }
 
     .booking-fc-day-selected .booking-fc-day-number,

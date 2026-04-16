@@ -4,6 +4,9 @@ export type BookingCalendarEvent = {
   id: number;
   roomId: number | null;
   roomName: string;
+  studentName: string;
+  activityName: string;
+  unit: string;
   start: string;
   end: string;
   status: BookingStatus;

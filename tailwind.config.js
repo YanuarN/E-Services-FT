@@ -9,6 +9,10 @@ export default {
     ],
     theme: {
         extend: {
+            fontFamily: {
+                sans: ['Poppins', 'Segoe UI', 'sans-serif'],
+                heading: ['Montserrat', 'Poppins', 'Segoe UI', 'sans-serif'],
+            },
             colors: {
                 primary: '#2E3A8C',
                 'primary-hover': '#1F2A66',

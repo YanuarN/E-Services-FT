@@ -1,78 +1,400 @@
-import { router, useForm, usePage } from '@inertiajs/react';
-import { format, startOfMonth } from 'date-fns';
-import { FormEvent, useMemo, useState } from 'react';
+import { useForm, usePage } from '@inertiajs/react';
+import { format, parseISO, startOfMonth } from 'date-fns';
+import type { FormEvent } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import BookingCalendar from '@/components/BookingCalendar/BookingCalendar';
 import InfoCard from '@/components/InfoCard/InfoCard';
 import AppLayout from '@/components/Layout/AppLayout/AppLayout';
-import StepProgress from '@/components/StepProgress/StepProgress';
-import { BookingSteps } from '@/data/PublicContent';
 import type {
   RoomBookingProps,
   RoomBookingSharedPageProps,
 } from '@/types/pages/Public/RoomBooking';
 import {
   buildAvailabilityMap,
+  filterEventsForRoom,
   findEventsForDate,
 } from '@/utils/BookingAvailability';
 
+const CUSTOM_ROOM_VALUE = '__custom_room__';
+
+const statusLabelMap = {
+  APPROVED: 'Disetujui',
+  PENDING: 'Menunggu',
+  REJECTED: 'Ditolak',
+} as const;
+
+const statusClassMap = {
+  APPROVED: 'bg-rose-100 text-rose-700',
+  PENDING: 'bg-amber-100 text-amber-700',
+  REJECTED: 'bg-slate-100 text-slate-700',
+} as const;
+
 const RoomBooking = ({ rooms, bookings, studyPrograms }: RoomBookingProps) => {
   const [month, setMonth] = useState(startOfMonth(new Date()));
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+  const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false);
+  const [isFormVisible, setIsFormVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const { flash } = usePage<RoomBookingSharedPageProps>().props;
 
-  const { data, setData, processing, errors, reset } = useForm({
-    student_name: '',
-    nim: '',
-    study_program: '',
-    phone_number: '',
-    unit: '',
-    activity_name: '',
-    room_id: '',
-    number_of_participants: '',
-    selected_date: format(new Date(), 'yyyy-MM-dd'),
-    start_time: '',
-    end_time: '',
-    document: null as File | null,
-  });
-
-  const availabilityMap = useMemo(
-    () => buildAvailabilityMap(bookings),
-    [bookings],
-  );
-  const selectedDayEvents = useMemo(
-    () => (selectedDate ? findEventsForDate(selectedDate, bookings) : []),
-    [bookings, selectedDate],
-  );
+  const { data, setData, post, processing, errors, reset, clearErrors } =
+    useForm({
+      student_name: '',
+      nim: '',
+      study_program: '',
+      phone_number: '',
+      unit: '',
+      activity_name: '',
+      room_id: '',
+      room_name: '',
+      number_of_participants: '',
+      selected_date: '',
+      start_time: '',
+      end_time: '',
+      document: null as File | null,
+    });
+  const [isCustomRoom, setIsCustomRoom] = useState(Boolean(data.room_name));
 
   const selectedRoom = useMemo(
     () => rooms.find((room) => String(room.id) === data.room_id),
     [data.room_id, rooms],
   );
+  const selectedRoomLabel = selectedRoom?.name ?? data.room_name.trim();
+  const isRoomSelected = selectedRoomLabel.length > 0;
+
+  const roomBookings = useMemo(
+    () =>
+      filterEventsForRoom(
+        bookings,
+        selectedRoom?.id ?? null,
+        selectedRoom?.name ?? data.room_name,
+      ),
+    [bookings, data.room_name, selectedRoom],
+  );
+  const availabilityMap = useMemo(
+    () => (isRoomSelected ? buildAvailabilityMap(roomBookings) : {}),
+    [isRoomSelected, roomBookings],
+  );
+  const selectedDayEvents = useMemo(
+    () => (selectedDate ? findEventsForDate(selectedDate, roomBookings) : []),
+    [roomBookings, selectedDate],
+  );
+
+  useEffect(() => {
+    if (!flash?.success) {
+      return;
+    }
+
+    setToastMessage(flash.success);
+
+    const timeoutId = window.setTimeout(() => setToastMessage(null), 4500);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [flash?.success]);
+
+  useEffect(() => {
+    if (Object.keys(errors).length > 0) {
+      setIsFormVisible(true);
+    }
+  }, [errors]);
+
+  const resetBookingFlow = () => {
+    setSelectedDate(undefined);
+    setIsBookingDialogOpen(false);
+    setIsFormVisible(false);
+    setData('selected_date', '');
+    setData('start_time', '');
+    setData('end_time', '');
+  };
+
+  const handleRoomOptionChange = (value: string) => {
+    resetBookingFlow();
+    clearErrors(
+      'room_id',
+      'room_name',
+      'selected_date',
+      'start_time',
+      'end_time',
+    );
+
+    if (value === CUSTOM_ROOM_VALUE) {
+      setIsCustomRoom(true);
+      setData('room_id', '');
+      setData('room_name', '');
+      return;
+    }
+
+    setIsCustomRoom(false);
+    setData('room_id', value);
+    setData('room_name', '');
+  };
 
   const handleDateChange = (date: Date | undefined) => {
+    if (!isRoomSelected) {
+      return;
+    }
+
     setSelectedDate(date);
     setData('selected_date', date ? format(date, 'yyyy-MM-dd') : '');
+    setIsBookingDialogOpen(Boolean(date));
+    clearErrors('selected_date');
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    router.post('/booking', data, {
+    post('/booking', {
       forceFormData: true,
       onSuccess: () => {
-        reset('activity_name', 'start_time', 'end_time', 'document');
+        reset();
+        setIsCustomRoom(false);
+        setSelectedDate(undefined);
+        setIsBookingDialogOpen(false);
+        setIsFormVisible(false);
       },
     });
   };
 
+  const selectedDateLabel = selectedDate
+    ? format(selectedDate, 'dd MMMM yyyy')
+    : 'Belum memilih tanggal';
+  const roomSummary = selectedRoom
+    ? `${selectedRoom.name} · Kapasitas ${selectedRoom.capacity} orang`
+    : selectedRoomLabel || 'Belum memilih ruangan';
+
   return (
     <AppLayout currentPath="/booking" pageTitle="Peminjaman Ruang">
+      {toastMessage ? (
+        <div className="pointer-events-none fixed right-4 top-4 z-50 sm:right-6 sm:top-6">
+          <div className="pointer-events-auto flex max-w-md items-start gap-3 rounded-2xl border border-emerald-200 bg-white px-4 py-4 shadow-[0_18px_40px_rgba(16,24,40,0.14)]">
+            <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+              <svg
+                viewBox="0 0 20 20"
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M4.5 10.5 8 14l7.5-8" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-emerald-700">
+                Permintaan berhasil dikirim
+              </p>
+              <p className="mt-1 text-sm text-slate-600">{toastMessage}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setToastMessage(null)}
+              className="rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+              aria-label="Tutup notifikasi"
+            >
+              <svg
+                viewBox="0 0 20 20"
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+              >
+                <path d="m5 5 10 10M15 5 5 15" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {isBookingDialogOpen && selectedDate ? (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-[rgba(15,23,42,0.42)] px-4 py-6">
+          <div className="w-full max-w-2xl rounded-[28px] bg-white p-6 shadow-[0_26px_80px_rgba(15,23,42,0.24)] sm:p-7">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--public-text-muted)]">
+                  Daftar Booking Ruangan
+                </p>
+                <h2 className="mt-2 text-2xl font-bold tracking-[-0.03em] text-[var(--public-primary-hover)]">
+                  {selectedRoomLabel}
+                </h2>
+                <p className="mt-2 text-sm text-[var(--public-text-muted)]">
+                  {format(selectedDate, 'dd MMMM yyyy')}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsBookingDialogOpen(false)}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--public-border)] text-[var(--public-primary-hover)] transition hover:bg-[var(--public-surface-soft)]"
+                aria-label="Tutup popup booking"
+              >
+                <svg
+                  viewBox="0 0 20 20"
+                  className="h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                >
+                  <path d="m5 5 10 10M15 5 5 15" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="mt-6 max-h-[46vh] space-y-3 overflow-y-auto pr-1">
+              {selectedDayEvents.length > 0 ? (
+                selectedDayEvents.map((booking) => (
+                  <div
+                    key={booking.id}
+                    className="rounded-2xl border border-[var(--public-border)] bg-[var(--public-surface-soft)] px-4 py-4"
+                  >
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <p className="text-base font-semibold text-[var(--public-primary-hover)]">
+                          {booking.studentName}
+                        </p>
+                        <p className="mt-1 text-sm text-[var(--public-text-muted)]">
+                          {booking.activityName}
+                        </p>
+                        <p className="mt-2 text-sm text-slate-500">
+                          {format(parseISO(booking.start), 'HH:mm')} -{' '}
+                          {format(parseISO(booking.end), 'HH:mm')}
+                          {booking.unit ? ` · ${booking.unit}` : ''}
+                        </p>
+                      </div>
+                      <span
+                        className={`inline-flex w-fit rounded-full px-3 py-1 text-xs font-semibold ${statusClassMap[booking.status]}`}
+                      >
+                        {statusLabelMap[booking.status]}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="rounded-2xl border border-dashed border-[var(--public-border)] bg-[var(--public-surface-soft)] px-4 py-5 text-sm text-[var(--public-text-muted)]">
+                  Belum ada booking untuk ruangan ini pada tanggal tersebut.
+                  Anda bisa lanjut mengajukan peminjaman.
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setIsBookingDialogOpen(false)}
+                className="rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm font-semibold text-[var(--public-primary-hover)] transition hover:bg-[var(--public-surface-soft)]"
+              >
+                Tutup
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsFormVisible(true);
+                  setIsBookingDialogOpen(false);
+                }}
+                className="rounded-2xl bg-[var(--public-accent)] px-5 py-3 text-sm font-semibold text-[var(--public-primary-hover)] shadow-[0_12px_24px_rgba(244,196,48,0.28)] transition hover:brightness-95"
+              >
+                Pinjam Tempat
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <section className="py-8 sm:py-10">
         <div className="public-container">
           <h1 className="text-4xl font-bold tracking-[-0.05em] text-[var(--public-primary-hover)] sm:text-5xl">
             Peminjaman Ruang
           </h1>
+        </div>
+      </section>
+
+      <section className="pb-8">
+        <div className="public-container">
+          <div className="public-card p-6 sm:p-8">
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--public-text-muted)]">
+                  Langkah 1
+                </p>
+                <h2 className="mt-2 text-2xl font-bold tracking-[-0.03em] text-[var(--public-primary-hover)]">
+                  Pilih Ruangan Terlebih Dahulu
+                </h2>
+                <p className="mt-2 max-w-2xl text-sm text-[var(--public-text-muted)]">
+                  Pilih ruangan dari database, atau gunakan opsi ruangan lain
+                  bila belum tersedia pada daftar.
+                </p>
+              </div>
+              <div className="rounded-2xl bg-[var(--public-surface-soft)] px-4 py-3 text-sm text-[var(--public-text-muted)]">
+                Kalender akan otomatis mewarnai ketersediaan setelah ruangan
+                dipilih.
+              </div>
+            </div>
+
+            <div className="mt-6 grid gap-5 lg:grid-cols-[1.3fr_0.7fr]">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
+                  Daftar Ruangan
+                </label>
+                <select
+                  value={isCustomRoom ? CUSTOM_ROOM_VALUE : data.room_id}
+                  onChange={(event) =>
+                    handleRoomOptionChange(event.target.value)
+                  }
+                  className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
+                >
+                  <option value="">Pilih Ruangan</option>
+                  {rooms.map((room) => (
+                    <option key={room.id} value={room.id}>
+                      {room.name} (Kapasitas {room.capacity})
+                    </option>
+                  ))}
+                  <option value={CUSTOM_ROOM_VALUE}>
+                    Ruangan lain, input manual
+                  </option>
+                </select>
+                {errors.room_id ? (
+                  <p className="mt-2 text-xs text-red-600">{errors.room_id}</p>
+                ) : null}
+              </div>
+
+              <div className="rounded-2xl border border-[rgba(31,42,102,0.08)] bg-white px-5 py-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--public-text-muted)]">
+                  Ruangan Aktif
+                </p>
+                <p className="mt-2 text-lg font-semibold text-[var(--public-primary-hover)]">
+                  {selectedRoomLabel || 'Belum dipilih'}
+                </p>
+                <p className="mt-1 text-sm text-[var(--public-text-muted)]">
+                  {roomSummary}
+                </p>
+              </div>
+            </div>
+
+            {isCustomRoom ? (
+              <div className="mt-5">
+                <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
+                  Nama Ruangan Manual
+                </label>
+                <input
+                  value={data.room_name}
+                  onChange={(event) => {
+                    if (selectedDate || isFormVisible || isBookingDialogOpen) {
+                      resetBookingFlow();
+                    }
+
+                    setData('room_name', event.target.value);
+                    clearErrors('room_name');
+                  }}
+                  type="text"
+                  placeholder="Contoh: Aula Lt. 2 / Ruang Seminar B"
+                  className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
+                />
+                {errors.room_name ? (
+                  <p className="mt-2 text-xs text-red-600">
+                    {errors.room_name}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
         </div>
       </section>
 
@@ -85,29 +407,43 @@ const RoomBooking = ({ rooms, bookings, studyPrograms }: RoomBookingProps) => {
               onSelectDate={handleDateChange}
               onMonthChange={setMonth}
               availabilityMap={availabilityMap}
+              isRoomSelected={isRoomSelected}
+              selectedRoomLabel={selectedRoomLabel}
             />
 
             <div className="space-y-5">
               <InfoCard title="Informasi Penting">
                 <ul className="space-y-3 text-[15px] leading-7">
-                  <li>Pastikan memilih tanggal terlebih dahulu di kalender.</li>
-                  <li>Mahasiswa dapat menentukan jam mulai dan jam selesai sendiri.</li>
-                  <li>Status pengajuan dan keputusan admin akan dikirim via WhatsApp.</li>
+                  <li>
+                    Pilih ruangan terlebih dahulu, lalu klik tanggal pada
+                    kalender.
+                  </li>
+                  <li>
+                    Setelah tanggal diklik, popup akan menampilkan daftar
+                    peminjam ruangan tersebut.
+                  </li>
+                  <li>
+                    Tekan tombol Pinjam Tempat untuk membuka form pengajuan di
+                    bawah kalender.
+                  </li>
                 </ul>
               </InfoCard>
 
               <div className="rounded-[24px] border border-[rgba(31,42,102,0.12)] bg-[var(--public-primary-hover)] p-6 text-white shadow-[var(--public-shadow)]">
                 <p className="text-white/56 text-[11px] font-semibold uppercase tracking-[0.22em]">
-                  Ringkasan Tanggal
+                  Ringkasan Pilihan
                 </p>
-                <p className="mt-1 text-[1.7rem] font-bold tracking-[-0.04em] text-white">
-                  {selectedDate ? format(selectedDate, 'dd MMM yyyy') : '-'}
+                <p className="mt-2 text-[1.4rem] font-bold tracking-[-0.04em] text-white">
+                  {selectedRoomLabel || 'Belum memilih ruangan'}
+                </p>
+                <p className="mt-2 text-sm text-white/80">
+                  {selectedDateLabel}
                 </p>
                 <div className="mt-5 h-px bg-white/20" />
                 <p className="mt-5 text-sm text-white/80">
-                  {selectedDayEvents.length > 0
-                    ? `${selectedDayEvents.length} booking aktif pada tanggal ini`
-                    : 'Belum ada booking aktif pada tanggal ini'}
+                  {isRoomSelected
+                    ? `${selectedDayEvents.length} booking ditemukan pada tanggal terpilih.`
+                    : 'Tentukan ruangan untuk mulai melihat ketersediaan.'}
                 </p>
               </div>
             </div>
@@ -118,207 +454,257 @@ const RoomBooking = ({ rooms, bookings, studyPrograms }: RoomBookingProps) => {
       <section className="py-12">
         <div className="public-container">
           <div className="public-card p-6 sm:p-8">
-            {flash?.success ? (
-              <div className="mb-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
-                {flash.success}
+            {isFormVisible ? (
+              <>
+                <div className="flex flex-col gap-4 border-b border-[var(--public-border)] pb-6 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold tracking-[-0.03em] text-[var(--public-primary-hover)]">
+                      Form Booking Lab / Ruang
+                    </h2>
+                    <p className="mt-2 text-sm text-[var(--public-text-muted)]">
+                      Lengkapi data berikut untuk mengajukan peminjaman pada
+                      jadwal yang sudah Anda pilih.
+                    </p>
+                  </div>
+                  <div className="rounded-2xl bg-[var(--public-surface-soft)] px-4 py-3 text-sm text-[var(--public-text-muted)]">
+                    <p>
+                      <span className="font-semibold text-[var(--public-primary-hover)]">
+                        Ruangan:
+                      </span>{' '}
+                      {selectedRoomLabel}
+                    </p>
+                    <p className="mt-1">
+                      <span className="font-semibold text-[var(--public-primary-hover)]">
+                        Tanggal:
+                      </span>{' '}
+                      {selectedDateLabel}
+                    </p>
+                  </div>
+                </div>
+
+                <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+                  <div className="grid gap-5 md:grid-cols-2">
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
+                        Nama Mahasiswa
+                      </label>
+                      <input
+                        value={data.student_name}
+                        onChange={(event) =>
+                          setData('student_name', event.target.value)
+                        }
+                        type="text"
+                        className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
+                      />
+                      {errors.student_name ? (
+                        <p className="mt-2 text-xs text-red-600">
+                          {errors.student_name}
+                        </p>
+                      ) : null}
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
+                        NIM
+                      </label>
+                      <input
+                        value={data.nim}
+                        onChange={(event) => setData('nim', event.target.value)}
+                        type="text"
+                        className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
+                      />
+                      {errors.nim ? (
+                        <p className="mt-2 text-xs text-red-600">
+                          {errors.nim}
+                        </p>
+                      ) : null}
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
+                        Program Studi
+                      </label>
+                      <select
+                        value={data.study_program}
+                        onChange={(event) =>
+                          setData('study_program', event.target.value)
+                        }
+                        className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
+                      >
+                        <option value="">Pilih Program Studi</option>
+                        {studyPrograms.map((program) => (
+                          <option key={program} value={program}>
+                            {program}
+                          </option>
+                        ))}
+                      </select>
+                      {errors.study_program ? (
+                        <p className="mt-2 text-xs text-red-600">
+                          {errors.study_program}
+                        </p>
+                      ) : null}
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
+                        Nomor WhatsApp
+                      </label>
+                      <input
+                        value={data.phone_number}
+                        onChange={(event) =>
+                          setData('phone_number', event.target.value)
+                        }
+                        type="tel"
+                        className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
+                      />
+                      {errors.phone_number ? (
+                        <p className="mt-2 text-xs text-red-600">
+                          {errors.phone_number}
+                        </p>
+                      ) : null}
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
+                        Unit / Organisasi
+                      </label>
+                      <input
+                        value={data.unit}
+                        onChange={(event) =>
+                          setData('unit', event.target.value)
+                        }
+                        type="text"
+                        className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
+                      />
+                      {errors.unit ? (
+                        <p className="mt-2 text-xs text-red-600">
+                          {errors.unit}
+                        </p>
+                      ) : null}
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
+                        Jumlah Peserta
+                      </label>
+                      <input
+                        value={data.number_of_participants}
+                        onChange={(event) =>
+                          setData('number_of_participants', event.target.value)
+                        }
+                        type="number"
+                        min={1}
+                        className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
+                      />
+                      {errors.number_of_participants ? (
+                        <p className="mt-2 text-xs text-red-600">
+                          {errors.number_of_participants}
+                        </p>
+                      ) : null}
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
+                        Jam Mulai
+                      </label>
+                      <input
+                        value={data.start_time}
+                        onChange={(event) =>
+                          setData('start_time', event.target.value)
+                        }
+                        type="time"
+                        className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
+                      />
+                      {errors.start_time ? (
+                        <p className="mt-2 text-xs text-red-600">
+                          {errors.start_time}
+                        </p>
+                      ) : null}
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
+                        Jam Selesai
+                      </label>
+                      <input
+                        value={data.end_time}
+                        onChange={(event) =>
+                          setData('end_time', event.target.value)
+                        }
+                        type="time"
+                        className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
+                      />
+                      {errors.end_time ? (
+                        <p className="mt-2 text-xs text-red-600">
+                          {errors.end_time}
+                        </p>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
+                      Nama Kegiatan
+                    </label>
+                    <textarea
+                      value={data.activity_name}
+                      onChange={(event) =>
+                        setData('activity_name', event.target.value)
+                      }
+                      rows={3}
+                      className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
+                    />
+                    {errors.activity_name ? (
+                      <p className="mt-2 text-xs text-red-600">
+                        {errors.activity_name}
+                      </p>
+                    ) : null}
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
+                      Dokumen Pendukung
+                    </label>
+                    <input
+                      onChange={(event) =>
+                        setData('document', event.target.files?.[0] ?? null)
+                      }
+                      type="file"
+                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                      className="w-full rounded-2xl border border-[var(--public-border)] bg-white px-5 py-3 text-sm file:mr-4 file:rounded-lg file:border-0 file:bg-[var(--public-primary-hover)] file:px-4 file:py-2 file:text-white"
+                    />
+                    {errors.document ? (
+                      <p className="mt-2 text-xs text-red-600">
+                        {errors.document}
+                      </p>
+                    ) : null}
+                  </div>
+
+                  <div className="flex justify-end">
+                    <button
+                      type="submit"
+                      disabled={processing}
+                      className="rounded-2xl bg-[var(--public-accent)] px-10 py-4 text-base font-semibold text-[var(--public-primary-hover)] shadow-[0_10px_22px_rgba(244,196,48,0.28)] transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-70"
+                    >
+                      {processing ? 'Mengirim...' : 'Ajukan Peminjaman'}
+                    </button>
+                  </div>
+                </form>
+              </>
+            ) : (
+              <div className="rounded-[26px] border border-dashed border-[var(--public-border)] bg-[var(--public-surface-soft)] px-6 py-10 text-center">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--public-text-muted)]">
+                  Langkah 3
+                </p>
+                <h2 className="mt-3 text-2xl font-bold tracking-[-0.03em] text-[var(--public-primary-hover)]">
+                  Form Akan Muncul Setelah Anda Menekan Pinjam Tempat
+                </h2>
+                <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-[var(--public-text-muted)]">
+                  Pilih ruangan, klik tanggal di kalender, lalu lanjutkan dari
+                  popup daftar booking untuk membuka form pengajuan.
+                </p>
               </div>
-            ) : null}
-
-            <h2 className="text-2xl font-bold tracking-[-0.03em] text-[var(--public-primary-hover)]">
-              Form Booking Lab / Ruang
-            </h2>
-            <p className="mt-2 text-sm text-[var(--public-text-muted)]">
-              Pilih tanggal dari kalender, lalu isi jam penggunaan sesuai kebutuhan.
-            </p>
-
-            <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-              <div className="grid gap-5 md:grid-cols-2">
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
-                    Nama Mahasiswa
-                  </label>
-                  <input
-                    value={data.student_name}
-                    onChange={(event) => setData('student_name', event.target.value)}
-                    type="text"
-                    className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
-                  />
-                  {errors.student_name ? <p className="mt-2 text-xs text-red-600">{errors.student_name}</p> : null}
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
-                    NIM
-                  </label>
-                  <input
-                    value={data.nim}
-                    onChange={(event) => setData('nim', event.target.value)}
-                    type="text"
-                    className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
-                  />
-                  {errors.nim ? <p className="mt-2 text-xs text-red-600">{errors.nim}</p> : null}
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
-                    Program Studi
-                  </label>
-                  <select
-                    value={data.study_program}
-                    onChange={(event) => setData('study_program', event.target.value)}
-                    className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
-                  >
-                    <option value="">Pilih Program Studi</option>
-                    {studyPrograms.map((program) => (
-                      <option key={program} value={program}>
-                        {program}
-                      </option>
-                    ))}
-                  </select>
-                  {errors.study_program ? <p className="mt-2 text-xs text-red-600">{errors.study_program}</p> : null}
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
-                    Nomor WhatsApp
-                  </label>
-                  <input
-                    value={data.phone_number}
-                    onChange={(event) => setData('phone_number', event.target.value)}
-                    type="tel"
-                    className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
-                  />
-                  {errors.phone_number ? <p className="mt-2 text-xs text-red-600">{errors.phone_number}</p> : null}
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
-                    Unit / Organisasi
-                  </label>
-                  <input
-                    value={data.unit}
-                    onChange={(event) => setData('unit', event.target.value)}
-                    type="text"
-                    className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
-                  />
-                  {errors.unit ? <p className="mt-2 text-xs text-red-600">{errors.unit}</p> : null}
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
-                    Ruangan
-                  </label>
-                  <select
-                    value={data.room_id}
-                    onChange={(event) => setData('room_id', event.target.value)}
-                    className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
-                  >
-                    <option value="">Pilih Ruangan</option>
-                    {rooms.map((room) => (
-                      <option key={room.id} value={room.id}>
-                        {room.name} (Kapasitas {room.capacity})
-                      </option>
-                    ))}
-                  </select>
-                  {errors.room_id ? <p className="mt-2 text-xs text-red-600">{errors.room_id}</p> : null}
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
-                    Tanggal
-                  </label>
-                  <input
-                    value={data.selected_date}
-                    onChange={(event) => setData('selected_date', event.target.value)}
-                    type="date"
-                    className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
-                  />
-                  {errors.selected_date ? <p className="mt-2 text-xs text-red-600">{errors.selected_date}</p> : null}
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
-                    Jumlah Peserta
-                  </label>
-                  <input
-                    value={data.number_of_participants}
-                    onChange={(event) => setData('number_of_participants', event.target.value)}
-                    type="number"
-                    min={1}
-                    className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
-                  />
-                  {errors.number_of_participants ? <p className="mt-2 text-xs text-red-600">{errors.number_of_participants}</p> : null}
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
-                    Jam Mulai
-                  </label>
-                  <input
-                    value={data.start_time}
-                    onChange={(event) => setData('start_time', event.target.value)}
-                    type="time"
-                    className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
-                  />
-                  {errors.start_time ? <p className="mt-2 text-xs text-red-600">{errors.start_time}</p> : null}
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
-                    Jam Selesai
-                  </label>
-                  <input
-                    value={data.end_time}
-                    onChange={(event) => setData('end_time', event.target.value)}
-                    type="time"
-                    className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
-                  />
-                  {errors.end_time ? <p className="mt-2 text-xs text-red-600">{errors.end_time}</p> : null}
-                </div>
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
-                  Nama Kegiatan
-                </label>
-                <textarea
-                  value={data.activity_name}
-                  onChange={(event) => setData('activity_name', event.target.value)}
-                  rows={3}
-                  className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
-                />
-                {errors.activity_name ? <p className="mt-2 text-xs text-red-600">{errors.activity_name}</p> : null}
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
-                  Dokumen Pendukung
-                </label>
-                <input
-                  onChange={(event) => setData('document', event.target.files?.[0] ?? null)}
-                  type="file"
-                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                  className="w-full rounded-2xl border border-[var(--public-border)] bg-white px-5 py-3 text-sm file:mr-4 file:rounded-lg file:border-0 file:bg-[var(--public-primary-hover)] file:px-4 file:py-2 file:text-white"
-                />
-                {errors.document ? <p className="mt-2 text-xs text-red-600">{errors.document}</p> : null}
-              </div>
-
-              {selectedRoom ? (
-                <div className="rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-700">
-                  Ruang dipilih: <strong>{selectedRoom.name}</strong> (kapasitas {selectedRoom.capacity}).
-                </div>
-              ) : null}
-
-              <div className="flex justify-end">
-                <button
-                  type="submit"
-                  disabled={processing}
-                  className="rounded-2xl bg-[var(--public-accent)] px-10 py-4 text-base font-semibold text-[var(--public-primary-hover)] shadow-[0_10px_22px_rgba(244,196,48,0.28)] transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-70"
-                >
-                  {processing ? 'Mengirim...' : 'Ajukan Peminjaman'}
-                </button>
-              </div>
-            </form>
+            )}
           </div>
         </div>
       </section>

@@ -17,11 +17,12 @@ const BookingCalendar = ({
   onSelectDate,
   onMonthChange,
   availabilityMap,
+  isRoomSelected,
+  selectedRoomLabel,
 }: BookingCalendarProps) => {
   const calendarRef = useRef<FullCalendar | null>(null);
 
   const selectedKey = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : null;
-
   const renderedMonth = useMemo(() => format(month, 'MMMM yyyy'), [month]);
 
   useEffect(() => {
@@ -58,13 +59,26 @@ const BookingCalendar = ({
   };
 
   const handleDateClick = ({ date }: DateClickArg) => {
+    if (!isRoomSelected) {
+      return;
+    }
+
     onSelectDate(date);
   };
 
   const dayCellClassNames = ({ date, view }: DayCellContentArg) => {
+    const isOutside = !isSameMonth(date, view.currentStart);
+
+    if (!isRoomSelected) {
+      return [
+        'booking-fc-day',
+        'booking-fc-day-idle',
+        isOutside ? 'booking-fc-day-outside' : '',
+      ].filter(Boolean);
+    }
+
     const availability = getAvailabilityForDate(date, availabilityMap);
     const isSelected = selectedDate ? isSameDay(date, selectedDate) : false;
-    const isOutside = !isSameMonth(date, view.currentStart);
 
     return [
       'booking-fc-day',
@@ -83,12 +97,14 @@ const BookingCalendar = ({
 
     let statusLabel = '';
 
-    if (isSelected) {
-      statusLabel = 'PILIHAN ANDA';
-    } else if (availability?.status === 'full') {
-      statusLabel = 'PENUH';
-    } else if (availability?.status === 'partial') {
-      statusLabel = 'TERSEDIA SEBAGIAN';
+    if (isRoomSelected) {
+      if (isSelected) {
+        statusLabel = 'PILIHAN ANDA';
+      } else if (availability?.status === 'full') {
+        statusLabel = 'PENUH';
+      } else if (availability?.status === 'partial') {
+        statusLabel = 'TERSEDIA SEBAGIAN';
+      }
     }
 
     return (
@@ -111,7 +127,9 @@ const BookingCalendar = ({
             {renderedMonth}
           </h2>
           <p className="mt-1 text-sm text-[var(--public-text-muted)]">
-            Tentukan tanggal kegiatan Anda
+            {isRoomSelected
+              ? `Klik tanggal untuk melihat booking ${selectedRoomLabel ?? 'ruangan ini'}`
+              : 'Pilih ruangan terlebih dahulu agar warna ketersediaan tampil.'}
           </p>
         </div>
 
@@ -170,24 +188,31 @@ const BookingCalendar = ({
         />
       </div>
 
-      <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3 text-sm text-[var(--public-text-muted)]">
-        <div className="flex items-center gap-2">
-          <span className="h-4 w-4 rounded border border-[var(--public-border)] bg-white" />
-          <span>Tersedia</span>
+      {isRoomSelected ? (
+        <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3 text-sm text-[var(--public-text-muted)]">
+          <div className="flex items-center gap-2">
+            <span className="h-4 w-4 rounded border border-[var(--public-border)] bg-white" />
+            <span>Tersedia</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="h-4 w-4 rounded bg-[#fff2a9]" />
+            <span>Tersedia Sebagian</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="h-4 w-4 rounded bg-[#ffb3bd]" />
+            <span>Penuh / Libur</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="h-4 w-4 rounded bg-[var(--public-primary-hover)]" />
+            <span>Pilihan Anda</span>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="h-4 w-4 rounded bg-[#fff2a9]" />
-          <span>Tersedia Sebagian</span>
+      ) : (
+        <div className="mt-5 rounded-2xl border border-dashed border-[var(--public-border)] bg-[var(--public-surface-soft)] px-4 py-3 text-sm text-[var(--public-text-muted)]">
+          Pilih ruangan terlebih dahulu agar kalender menampilkan warna
+          ketersediaan sesuai ruangan yang dipilih.
         </div>
-        <div className="flex items-center gap-2">
-          <span className="h-4 w-4 rounded bg-[#f9d8db]" />
-          <span>Penuh / Libur</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="h-4 w-4 rounded bg-[var(--public-primary-hover)]" />
-          <span>Pilihan Anda</span>
-        </div>
-      </div>
+      )}
     </div>
   );
 };

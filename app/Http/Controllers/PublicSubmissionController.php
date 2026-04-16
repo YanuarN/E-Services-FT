@@ -40,7 +40,8 @@ class PublicSubmissionController extends Controller
             'phone_number' => ['required', 'string', 'max:255'],
             'unit' => ['required', 'string', 'max:255'],
             'activity_name' => ['required', 'string', 'max:500'],
-            'room_id' => ['required', 'integer', Rule::exists('rooms', 'id')],
+            'room_id' => ['nullable', 'integer', Rule::exists('rooms', 'id')],
+            'room_name' => ['required_without:room_id', 'nullable', 'string', 'max:255'],
             'number_of_participants' => ['required', 'integer', 'min:1'],
             'selected_date' => ['required', 'date', 'after_or_equal:today'],
             'start_time' => ['required', 'date_format:H:i'],
@@ -59,11 +60,28 @@ class PublicSubmissionController extends Controller
             config('app.timezone')
         );
 
+        $room = filled($validated['room_id'] ?? null)
+            ? Room::query()->findOrFail($validated['room_id'])
+            : null;
+
+        $resolvedRoomName = $room?->name ?? trim((string) ($validated['room_name'] ?? ''));
+        $normalizedRoomName = mb_strtolower($resolvedRoomName);
+
         $hasConflict = RoomUsageRequest::query()
-            ->where('room_id', $validated['room_id'])
             ->whereIn('status', ['PENDING', 'APPROVED'])
             ->where('start_at', '<', $endAt)
             ->where('end_at', '>', $startAt)
+            ->where(function ($query) use ($room, $normalizedRoomName): void {
+                if ($room) {
+                    $query
+                        ->where('room_id', $room->id)
+                        ->orWhereRaw('LOWER(room_name) = ?', [$normalizedRoomName]);
+
+                    return;
+                }
+
+                $query->whereRaw('LOWER(room_name) = ?', [$normalizedRoomName]);
+            })
             ->exists();
 
         if ($hasConflict) {
@@ -74,7 +92,6 @@ class PublicSubmissionController extends Controller
                 ->withInput();
         }
 
-        $room = Room::query()->findOrFail($validated['room_id']);
         $documentPath = Storage::disk('local')->putFile('room-usage-requests', $request->file('document'));
 
         RoomUsageRequest::query()->create([
@@ -86,8 +103,8 @@ class PublicSubmissionController extends Controller
             'activity_name' => $validated['activity_name'],
             'start_at' => $startAt,
             'end_at' => $endAt,
-            'room_id' => $room->id,
-            'room_name' => $room->name,
+            'room_id' => $room?->id,
+            'room_name' => $resolvedRoomName,
             'number_of_participants' => $validated['number_of_participants'],
             'status' => 'PENDING',
             'document' => $documentPath,
