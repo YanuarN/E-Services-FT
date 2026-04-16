@@ -1,3 +1,222 @@
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+    :root {
+        --public-primary: #2e3a8c;
+        --public-primary-hover: #1f2a66;
+        --public-accent: #f4c430;
+        --public-success: #1abc9c;
+        --public-background: #f5f7ff;
+        --public-surface: #ffffff;
+        --public-surface-soft: #edf2ff;
+        --public-surface-muted: #e5ebfb;
+        --public-border: #d9e1f2;
+        --public-border-strong: #b9c8ec;
+        --public-text: #162048;
+        --public-text-muted: #626b85;
+        --public-shadow: 0 18px 45px rgba(31, 42, 102, 0.08);
+        --public-shadow-soft: 0 10px 24px rgba(31, 42, 102, 0.06);
+    }
+
+    html {
+        scroll-behavior: smooth;
+    }
+
+    body {
+        background: var(--public-background);
+        color: var(--public-text);
+        font-family: "Quicksand", "Segoe UI", sans-serif;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        font-family: "Quicksand", "Segoe UI", sans-serif;
+    }
+}
+
+@layer components {
+    .public-shell {
+        @apply min-h-screen bg-[var(--public-background)] text-[var(--public-text)];
+    }
+
+    .public-container {
+        @apply mx-auto w-full max-w-7xl px-5 sm:px-6 lg:px-8;
+    }
+
+    .public-card {
+        background: var(--public-surface);
+        border: 1px solid var(--public-border);
+        box-shadow: var(--public-shadow-soft);
+        @apply rounded-[24px];
+    }
+
+    .public-card-soft {
+        background: var(--public-surface-soft);
+        border: 1px solid var(--public-border);
+        @apply rounded-[24px];
+    }
+
+    .public-section-title {
+        @apply text-3xl font-bold tracking-[-0.03em] text-[var(--public-primary-hover)] sm:text-4xl;
+    }
+
+    .public-hero-bg {
+        background-image:
+            linear-gradient(90deg, rgba(31, 42, 102, 0.82) 0%, rgba(46, 58, 140, 0.78) 48%, rgba(46, 58, 140, 0.72) 100%),
+            linear-gradient(120deg, rgba(255, 255, 255, 0.04) 10%, transparent 10%, transparent 48%, rgba(255, 255, 255, 0.03) 48%, rgba(255, 255, 255, 0.03) 51%, transparent 51%, transparent 100%),
+            radial-gradient(circle at 85% 30%, rgba(255, 255, 255, 0.14), transparent 22%),
+            linear-gradient(135deg, #1d2b78 0%, #23348b 42%, #1d2768 100%);
+    }
+
+    .public-hero-grid {
+        background-image:
+            linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+        background-size: 72px 72px;
+    }
+
+    .timeline-line {
+        background: linear-gradient(
+            180deg,
+            rgba(46, 58, 140, 0.18) 0%,
+            rgba(46, 58, 140, 0.32) 50%,
+            rgba(46, 58, 140, 0.16) 100%
+        );
+    }
+
+    .booking-fc-shell .fc {
+        --fc-border-color: rgba(217, 225, 242, 0.75);
+        --fc-page-bg-color: transparent;
+        --fc-today-bg-color: transparent;
+        --fc-neutral-bg-color: #edf2ff;
+        --fc-button-text-color: var(--public-primary-hover);
+        --fc-button-bg-color: transparent;
+        --fc-button-border-color: transparent;
+        --fc-button-hover-bg-color: transparent;
+        --fc-button-hover-border-color: transparent;
+        --fc-button-active-bg-color: transparent;
+        --fc-button-active-border-color: transparent;
+    }
+
+    .booking-fc-shell .fc-theme-standard td,
+    .booking-fc-shell .fc-theme-standard th,
+    .booking-fc-shell .fc-theme-standard .fc-scrollgrid {
+        border-color: rgba(217, 225, 242, 0.8);
+    }
+
+    .booking-fc-shell .fc-scrollgrid {
+        border: 0;
+    }
+
+    .booking-fc-shell .fc-col-header-cell {
+        background: #edf2ff;
+        padding: 0.2rem 0;
+    }
+
+    .booking-fc-shell .fc-col-header-cell-cushion {
+        padding: 0.95rem 0.35rem;
+        font-size: 0.68rem;
+        font-weight: 800;
+        letter-spacing: 0.18em;
+        color: var(--public-primary-hover);
+    }
+
+    .booking-fc-shell .fc-daygrid-day-top {
+        display: block;
+        padding: 0;
+    }
+
+    .booking-fc-shell .fc-daygrid-day-events,
+    .booking-fc-shell .fc-daygrid-day-bottom {
+        display: none;
+    }
+
+    .booking-fc-shell .fc-daygrid-day-frame {
+        min-height: 92px;
+    }
+
+    .booking-fc-day {
+        cursor: pointer;
+        background: #ffffff;
+        transition:
+            background-color 0.2s ease,
+            box-shadow 0.2s ease,
+            transform 0.2s ease;
+    }
+
+    .booking-fc-day:hover {
+        box-shadow: inset 0 0 0 1px rgba(31, 42, 102, 0.14);
+    }
+
+    .booking-fc-day-available {
+        background: #ffffff;
+    }
+
+    .booking-fc-day-partial {
+        background: #fff2a9;
+    }
+
+    .booking-fc-day-full {
+        background: #f9d8db;
+    }
+
+    .booking-fc-day-selected {
+        background: var(--public-primary-hover);
+        box-shadow: inset 0 0 0 2px var(--public-accent);
+    }
+
+    .booking-fc-day-outside {
+        background: #f3f4f8;
+    }
+
+    .booking-fc-day-inner {
+        display: flex;
+        min-height: 92px;
+        flex-direction: column;
+        gap: 0.4rem;
+        padding: 0.6rem 0.55rem;
+        text-align: left;
+    }
+
+    .booking-fc-day-inner-outside {
+        opacity: 0.55;
+    }
+
+    .booking-fc-day-number {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: #111827;
+    }
+
+    .booking-fc-day-status {
+        max-width: 100%;
+        font-size: 0.58rem;
+        font-weight: 800;
+        line-height: 1.25;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        color: inherit;
+        white-space: pre-line;
+    }
+
+    .booking-fc-day-partial .booking-fc-day-status {
+        color: #7a5b00;
+    }
+
+    .booking-fc-day-full .booking-fc-day-status {
+        color: #c2333f;
+    }
+
+    .booking-fc-day-selected .booking-fc-day-number,
+    .booking-fc-day-selected .booking-fc-day-status {
+        color: #ffffff;
+    }
+}

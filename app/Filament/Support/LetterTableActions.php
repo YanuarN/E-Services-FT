@@ -45,14 +45,16 @@ class LetterTableActions
                     $service = static::resolveService($record);
 
                     $record->forceFill([
-                        'status' => 'APPROVE',
                         'letter_number' => $data['letter_number'],
                         'letter_date' => $data['letter_date'],
-                    ])->save();
+                    ]);
+
+                    $service->ensureTemplateReady();
 
                     $pdfPath = $service->generatePdf($record);
 
                     $record->forceFill([
+                        'status' => 'APPROVE',
                         'pdf_path' => $pdfPath,
                     ])->save();
 

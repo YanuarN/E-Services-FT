@@ -16,6 +16,13 @@ use Throwable;
 
 abstract class UniversalLetterService
 {
+    final public function ensureTemplateReady(): void
+    {
+        $template = $this->resolveTemplate();
+
+        $this->resolveTemplatePath($template);
+    }
+
     final public function generatePdf(Model $letter): string
     {
         $this->assertSupportedModel($letter);
@@ -164,14 +171,18 @@ abstract class UniversalLetterService
             return [
                 'anggota_no' => $person['no'],
                 'mahasiswa_no' => $person['no'],
+                'm_no' => $person['no'],
                 'nama_mahasiswa' => $person['name'],
+                'm_nama' => $person['name'],
                 'anggota_nim' => $person['nim'],
                 'mahasiswa_nim' => $person['nim'],
                 'nim' => $person['nim'],
+                'm_nim' => $person['nim'],
                 'anggota_prodi' => $person['study_program'],
                 'mahasiswa_prodi' => $person['study_program'],
                 'program_studi' => $person['study_program'],
                 'prodi' => $person['study_program'],
+                'm_prodi' => $person['study_program'],
             ];
         }, $people);
     }

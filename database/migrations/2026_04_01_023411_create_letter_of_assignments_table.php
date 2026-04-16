@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('letter_of_assignments', function (Blueprint $table) {
             $table->id();
-            $table->date('date');
-            $table->time('time');
+            $table->text('date');
+            $table->text('time')->nullable();
             $table->string('place');
             $table->json('student_list');
             $table->enum('status', ['SUBMITTED', 'APPROVE', 'REJECT'])->default('SUBMITTED');

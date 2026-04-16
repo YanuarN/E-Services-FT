@@ -36,7 +36,8 @@ class LetterOfAssignmentsTable
                     ->wrap(),
                 TextColumn::make('date')
                     ->label('Tanggal')
-                    ->date('d M Y')
+                    ->searchable()
+                    ->wrap()
                     ->sortable(),
                 TextColumn::make('status')
                     ->label('Status')

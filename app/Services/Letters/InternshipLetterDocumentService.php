@@ -45,19 +45,23 @@ class InternshipLetterDocumentService extends UniversalLetterService
 
         return [
             $this->buildRowCollection(
-                ['anggota_no', 'mahasiswa_no'],
+                ['anggota_no', 'mahasiswa_no', 'm_no', 'm_nama', 'm_nim', 'm_prodi'],
                 $rows,
                 [
                     'anggota_no',
                     'mahasiswa_no',
+                    'm_no',
                     'nama_mahasiswa',
+                    'm_nama',
                     'anggota_nim',
                     'mahasiswa_nim',
                     'nim',
+                    'm_nim',
                     'anggota_prodi',
                     'mahasiswa_prodi',
                     'program_studi',
                     'prodi',
+                    'm_prodi',
                 ],
             ),
         ];

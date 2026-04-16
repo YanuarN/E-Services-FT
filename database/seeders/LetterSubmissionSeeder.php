@@ -101,8 +101,16 @@ class LetterSubmissionSeeder extends Seeder
         foreach (range(1, 8) as $index) {
             LetterOfAssignment::query()->create([
                 'status' => 'SUBMITTED',
-                'date' => fake()->dateTimeBetween('+2 days', '+20 days')->format('Y-m-d'),
-                'time' => fake()->time('H:i:s'),
+                'date' => fake()->randomElement([
+                    'Rabu-Jumat, 15-17 Oktober 2025',
+                    'Senin-Selasa, 5-6 Mei 2025',
+                    'Kamis, 24 Oktober 2025',
+                ]),
+                'time' => fake()->randomElement([
+                    '08.00 WIB s.d. selesai',
+                    '09.00 - 12.00 WIB',
+                    '13.00 WIB - 15.30 WIB',
+                ]),
                 'place' => fake()->randomElement(['Ruang Seminar FT', 'Laboratorium Komputer', 'Aula Fakultas', 'Gedung Riset']),
                 'student_list' => [
                     [

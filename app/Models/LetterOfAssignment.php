@@ -22,7 +22,6 @@ class LetterOfAssignment extends Model
     ];
 
     protected $casts = [
-        'date' => 'date',
         'letter_date' => 'date',
         'student_list' => 'array',
     ];

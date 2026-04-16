@@ -21,13 +21,12 @@ class LetterOfAssignmentDocumentService extends UniversalLetterService
     {
         /** @var LetterOfAssignment $letter */
         $students = $this->normalizePeople($letter->student_list ?? []);
-        $assignmentDate = $this->formatDate($letter->date);
 
         return array_merge(
             $this->baseLetterPayload($letter),
             [
-                'tanggal_kegiatan' => $assignmentDate,
-                'waktu' => $this->formatTime($letter->time),
+                'tanggal_kegiatan' => (string) ($letter->date ?? ''),
+                'waktu' => (string) ($letter->time ?? ''),
                 'tempat' => $letter->place,
                 'daftar_mahasiswa' => $this->buildPeopleSummary($students),
             ],
@@ -41,18 +40,22 @@ class LetterOfAssignmentDocumentService extends UniversalLetterService
 
         return [
             $this->buildRowCollection(
-                ['mahasiswa_no', 'anggota_no'],
+                ['mahasiswa_no', 'anggota_no', 'm_no', 'm_nama', 'm_nim', 'm_prodi'],
                 $rows,
                 [
                     'mahasiswa_no',
                     'anggota_no',
+                    'm_no',
                     'nama_mahasiswa',
+                    'm_nama',
                     'mahasiswa_nim',
                     'nim',
+                    'm_nim',
                     'mahasiswa_prodi',
                     'anggota_prodi',
                     'program_studi',
                     'prodi',
+                    'm_prodi',
                 ],
             ),
         ];
@@ -70,8 +73,8 @@ class LetterOfAssignmentDocumentService extends UniversalLetterService
         $students = $this->normalizePeople($letter->student_list ?? []);
 
         return [
-            $this->makeVerificationField('Tanggal Kegiatan', $this->formatDate($letter->date)),
-            $this->makeVerificationField('Waktu', $this->formatTime($letter->time)),
+            $this->makeVerificationField('Tanggal Kegiatan', $letter->date),
+            $this->makeVerificationField('Waktu', $letter->time),
             $this->makeVerificationField('Tempat', $letter->place),
             $this->makeVerificationField('Daftar Mahasiswa', $this->buildPeopleSummary($students)),
         ];

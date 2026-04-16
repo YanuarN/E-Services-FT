@@ -6,6 +6,7 @@ use App\Models\LetterTemplate;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Facades\Route;
 
 class LetterTemplateInfolist
 {
@@ -26,7 +27,9 @@ class LetterTemplateInfolist
                         TextEntry::make('document_path')
                             ->label('Path Dokumen')
                             ->url(fn ($record) => $record?->document_path
-                                ? route('filament.admin.resources.letter-templates.download', $record)
+                                ? (Route::has('filament.admin.resources.letter-templates.download')
+                                    ? route('filament.admin.resources.letter-templates.download', $record)
+                                    : null)
                                 : null
                             )
                             ->openUrlInNewTab()

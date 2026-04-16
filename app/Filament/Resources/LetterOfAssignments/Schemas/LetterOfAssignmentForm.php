@@ -3,9 +3,7 @@
 namespace App\Filament\Resources\LetterOfAssignments\Schemas;
 
 use App\Filament\Support\LetterFormComponents;
-use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\TimePicker;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
@@ -17,12 +15,17 @@ class LetterOfAssignmentForm
             ->components([
                 Section::make('Data Kegiatan')
                     ->schema([
-                        DatePicker::make('date')
+                        TextInput::make('date')
                             ->label('Tanggal Kegiatan')
+                            ->placeholder('Contoh: Rabu-Jumat, 15-17 Oktober 2025')
+                            ->helperText('Isi bebas sesuai format hari/tanggal kegiatan.')
+                            ->maxLength(255)
                             ->required(),
-                        TimePicker::make('time')
+                        TextInput::make('time')
                             ->label('Waktu')
-                            ->seconds(false),
+                            ->placeholder('Contoh: 08.00 WIB s.d. selesai')
+                            ->helperText('Isi bebas sesuai format rentang waktu kegiatan.')
+                            ->maxLength(255),
                         TextInput::make('place')
                             ->label('Tempat')
                             ->required()

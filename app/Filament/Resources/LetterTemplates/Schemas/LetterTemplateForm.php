@@ -32,7 +32,14 @@ class LetterTemplateForm
                         FileUpload::make('document_path')
                             ->label('File Template')
                             ->required()
-                            ->acceptedFileTypes(['application/vnd.openxmlformats-officedocument.wordprocessingml.document'])
+                            ->acceptedFileTypes([
+                                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                            ])
+                            ->mimeTypeMap([
+                                'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                            ])
+                            ->rules(['file', 'extensions:docx'])
+                            ->helperText('Gunakan file dengan ekstensi .docx (bukan .doc/.docs).')
                             ->directory('letter-templates')
                             ->visibility('private')
                             ->maxSize(10240), // 10 MB
