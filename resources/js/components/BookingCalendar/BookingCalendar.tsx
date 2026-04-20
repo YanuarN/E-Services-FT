@@ -3,7 +3,14 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import type { DateClickArg } from '@fullcalendar/interaction';
 import interactionPlugin from '@fullcalendar/interaction';
 import FullCalendar from '@fullcalendar/react';
-import { format, isSameDay, isSameMonth, startOfMonth } from 'date-fns';
+import {
+  format,
+  isBefore,
+  isSameDay,
+  isSameMonth,
+  startOfDay,
+  startOfMonth,
+} from 'date-fns';
 import { useEffect, useMemo, useRef } from 'react';
 
 import type { BookingCalendarProps } from '@/types/components/BookingCalendar';
@@ -21,6 +28,7 @@ const BookingCalendar = ({
   selectedRoomLabel,
 }: BookingCalendarProps) => {
   const calendarRef = useRef<FullCalendar | null>(null);
+  const today = useMemo(() => startOfDay(new Date()), []);
 
   const selectedKey = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : null;
   const renderedMonth = useMemo(() => format(month, 'MMMM yyyy'), [month]);
@@ -55,11 +63,15 @@ const BookingCalendar = ({
   };
 
   const handleDatesSet = ({ view }: DatesSetArg) => {
-    onMonthChange(startOfMonth(view.currentStart));
+    const nextMonth = startOfMonth(view.calendar.getDate());
+
+    if (!isSameMonth(nextMonth, month)) {
+      onMonthChange(nextMonth);
+    }
   };
 
   const handleDateClick = ({ date }: DateClickArg) => {
-    if (!isRoomSelected) {
+    if (!isRoomSelected || isBefore(startOfDay(date), today)) {
       return;
     }
 
@@ -68,6 +80,7 @@ const BookingCalendar = ({
 
   const dayCellClassNames = ({ date, view }: DayCellContentArg) => {
     const isOutside = !isSameMonth(date, view.currentStart);
+    const isPastDate = isBefore(startOfDay(date), today);
 
     if (!isRoomSelected) {
       return [
@@ -85,6 +98,7 @@ const BookingCalendar = ({
       availability
         ? `booking-fc-day-${availability.status}`
         : 'booking-fc-day-available',
+      isPastDate ? 'booking-fc-day-disabled' : '',
       isSelected ? 'booking-fc-day-selected' : '',
       isOutside ? 'booking-fc-day-outside' : '',
     ].filter(Boolean);
@@ -199,7 +213,7 @@ const BookingCalendar = ({
             <span>Tersedia Sebagian</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="h-4 w-4 rounded bg-[#ffb3bd]" />
+            <span className="h-4 w-4 rounded bg-[#a0303f]" />
             <span>Penuh / Libur</span>
           </div>
           <div className="flex items-center gap-2">

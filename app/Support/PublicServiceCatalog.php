@@ -167,7 +167,6 @@ class PublicServiceCatalog
             'Teknik Elektro',
             'Teknik Industri',
             'Arsitektur',
-            'Informatika',
         ];
     }
 

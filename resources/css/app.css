@@ -182,12 +182,18 @@
     }
 
     .booking-fc-day-full {
-        background: #ffb3bd;
+        background: #a0303f;
     }
 
     .booking-fc-day-selected {
         background: var(--public-primary-hover);
         box-shadow: inset 0 0 0 2px var(--public-accent);
+    }
+
+    .booking-fc-day-disabled {
+        cursor: not-allowed;
+        background: #f3f4f8;
+        pointer-events: none;
     }
 
     .booking-fc-day-outside {
@@ -217,6 +223,10 @@
         color: #94a3b8;
     }
 
+    .booking-fc-day-disabled .booking-fc-day-number {
+        color: #94a3b8;
+    }
+
     .booking-fc-day-status {
         max-width: 100%;
         font-size: 0.58rem;
@@ -239,5 +249,33 @@
     .booking-fc-day-selected .booking-fc-day-number,
     .booking-fc-day-selected .booking-fc-day-status {
         color: #ffffff;
+    }
+
+    @media (max-width: 640px) {
+        .booking-fc-shell .fc-col-header-cell-cushion {
+            padding: 0.8rem 0.2rem;
+            font-size: 0.62rem;
+            letter-spacing: 0.14em;
+        }
+
+        .booking-fc-shell .fc-daygrid-day-frame {
+            min-height: 68px;
+        }
+
+        .booking-fc-day-inner {
+            min-height: 68px;
+            gap: 0.2rem;
+            padding: 0.45rem 0.35rem;
+        }
+
+        .booking-fc-day-number {
+            font-size: 0.78rem;
+        }
+
+        .booking-fc-day-status {
+            font-size: 0.5rem;
+            line-height: 1.15;
+            letter-spacing: 0.02em;
+        }
     }
 }

@@ -19,7 +19,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({
       {pageTitle ? <Head title={pageTitle} /> : null}
       <Navbar currentPath={currentPath} />
       <main className="flex-grow">{children}</main>
-      <Footer />
+      <Footer currentPath={currentPath} />
     </div>
   );
 };

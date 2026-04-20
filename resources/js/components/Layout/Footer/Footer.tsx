@@ -1,7 +1,20 @@
 import { Link } from '@inertiajs/react';
 import React from 'react';
 
-const Footer: React.FC = () => {
+interface FooterProps {
+  currentPath?: string;
+}
+
+const quickLinks = [
+  { label: 'Beranda', href: '/' },
+  { label: 'Layanan Surat', href: '/services' },
+  { label: 'Peminjaman Ruang', href: '/booking' },
+  { label: 'Panduan & SOP', href: '/guidelines' },
+];
+
+const Footer: React.FC<FooterProps> = ({ currentPath }) => {
+  const activePath = currentPath ?? '/';
+
   return (
     <footer className="bg-[var(--public-primary-hover)] text-white">
       <div className="public-container grid gap-10 py-14 md:grid-cols-[1.6fr_0.9fr_1fr]">
@@ -59,30 +72,23 @@ const Footer: React.FC = () => {
             Tautan Cepat
           </h4>
           <div className="mt-5 space-y-3 text-sm">
-            <Link
-              href="/"
-              className="block text-white/80 transition hover:text-white"
-            >
-              Beranda
-            </Link>
-            <Link
-              href="/services"
-              className="block text-white/80 transition hover:text-white"
-            >
-              Layanan Surat
-            </Link>
-            <Link
-              href="/booking"
-              className="block font-semibold text-[var(--public-accent)] transition hover:brightness-110"
-            >
-              Peminjaman Ruang
-            </Link>
-            <Link
-              href="/guidelines"
-              className="block text-white/80 transition hover:text-white"
-            >
-              Panduan &amp; SOP
-            </Link>
+            {quickLinks.map((item) => {
+              const isActive = activePath === item.href;
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`block transition ${
+                    isActive
+                      ? 'font-semibold text-[var(--public-accent)] hover:brightness-110'
+                      : 'text-white/80 hover:text-white'
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
           </div>
         </div>
 

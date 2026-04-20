@@ -1,5 +1,5 @@
 import { useForm, usePage } from '@inertiajs/react';
-import { format, parseISO, startOfMonth } from 'date-fns';
+import { format, isBefore, parseISO, startOfDay, startOfMonth } from 'date-fns';
 import type { FormEvent } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -184,6 +184,9 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
   const selectedDateLabel = selectedDate
     ? format(selectedDate, 'dd MMMM yyyy')
     : 'Belum memilih tanggal';
+  const isPastSelectedDate = selectedDate
+    ? isBefore(startOfDay(selectedDate), startOfDay(new Date()))
+    : false;
   const roomSummary = selectedRoom
     ? `${selectedRoom.name} · Kapasitas ${selectedRoom.capacity} orang`
     : selectedRoomLabel || 'Belum memilih ruangan';
@@ -308,6 +311,14 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
               )}
             </div>
 
+            {isPastSelectedDate ? (
+              <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-800">
+                Tanggal yang sudah terlewat hanya bisa dilihat riwayat
+                booking-nya. Pengajuan booking baru hanya tersedia untuk hari
+                ini dan tanggal setelahnya.
+              </div>
+            ) : null}
+
             <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
               <button
                 type="button"
@@ -318,11 +329,16 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
               </button>
               <button
                 type="button"
+                disabled={isPastSelectedDate}
                 onClick={() => {
+                  if (isPastSelectedDate) {
+                    return;
+                  }
+
                   setIsFormVisible(true);
                   setIsBookingDialogOpen(false);
                 }}
-                className="rounded-2xl bg-[var(--public-accent)] px-5 py-3 text-sm font-semibold text-[var(--public-primary-hover)] shadow-[0_12px_24px_rgba(244,196,48,0.28)] transition hover:brightness-95"
+                className="rounded-2xl bg-[var(--public-accent)] px-5 py-3 text-sm font-semibold text-[var(--public-primary-hover)] shadow-[0_12px_24px_rgba(244,196,48,0.28)] transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
               >
                 Pinjam Tempat
               </button>
@@ -433,8 +449,12 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
                     peminjam ruangan tersebut.
                   </li>
                   <li>
+                    Tanggal yang sudah lewat hanya bisa dilihat sebagai
+                    riwayat, tidak bisa diajukan booking baru.
+                  </li>
+                  <li>
                     Tekan tombol Pinjam Tempat untuk membuka form pengajuan di
-                    bawah kalender.
+                    bawah kalender untuk tanggal hari ini atau berikutnya.
                   </li>
                 </ul>
               </InfoCard>
@@ -454,7 +474,9 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
                   {isRoomBookingsLoading
                     ? 'Memuat jadwal ruangan terpilih...'
                     : isRoomSelected
-                    ? `${selectedDayEvents.length} booking ditemukan pada tanggal terpilih.`
+                    ? isPastSelectedDate
+                      ? `${selectedDayEvents.length} booking ditemukan pada tanggal lampau. Mode lihat saja aktif.`
+                      : `${selectedDayEvents.length} booking ditemukan pada tanggal terpilih.`
                     : 'Tentukan ruangan untuk mulai melihat ketersediaan.'}
                 </p>
               </div>
@@ -466,7 +488,7 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
       <section className="py-12">
         <div className="public-container">
           <div className="public-card p-6 sm:p-8">
-            {isFormVisible ? (
+            {isFormVisible && !isPastSelectedDate ? (
               <>
                 <div className="flex flex-col gap-4 border-b border-[var(--public-border)] pb-6 sm:flex-row sm:items-start sm:justify-between">
                   <div>
@@ -703,6 +725,20 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
                   </div>
                 </form>
               </>
+            ) : isPastSelectedDate && selectedDate ? (
+              <div className="rounded-[26px] border border-amber-200 bg-amber-50 px-6 py-10 text-center">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-amber-700">
+                  Mode Lihat Saja
+                </p>
+                <h2 className="mt-3 text-2xl font-bold tracking-[-0.03em] text-[var(--public-primary-hover)]">
+                  Booking Baru Tidak Tersedia Untuk Tanggal Yang Sudah Lewat
+                </h2>
+                <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-amber-800">
+                  Anda tetap bisa melihat siapa yang sudah melakukan booking
+                  pada {selectedDateLabel}, tetapi pengajuan baru hanya bisa
+                  dilakukan untuk hari ini dan tanggal setelahnya.
+                </p>
+              </div>
             ) : (
               <div className="rounded-[26px] border border-dashed border-[var(--public-border)] bg-[var(--public-surface-soft)] px-6 py-10 text-center">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--public-text-muted)]">
