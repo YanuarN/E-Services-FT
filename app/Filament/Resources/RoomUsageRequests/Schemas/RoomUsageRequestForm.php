@@ -5,8 +5,8 @@ namespace App\Filament\Resources\RoomUsageRequests\Schemas;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
@@ -59,12 +59,10 @@ class RoomUsageRequestForm
                         Select::make('room_id')
                             ->label('Ruang')
                             ->relationship('room', 'name')
+                            ->required()
                             ->searchable()
-                            ->preload(),
-                        TextInput::make('room_name')
-                            ->label('Nama Ruang Manual')
-                            ->helperText('Isi jika ruang belum tersedia di daftar ruang.')
-                            ->maxLength(255),
+                            ->preload()
+                            ->helperText('Tambahkan data ruang lebih dulu melalui menu Ruangan bila belum tersedia.'),
                         TextInput::make('number_of_participants')
                             ->label('Jumlah Peserta')
                             ->required()

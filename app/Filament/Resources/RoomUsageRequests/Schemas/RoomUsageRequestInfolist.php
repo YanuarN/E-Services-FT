@@ -31,11 +31,8 @@ class RoomUsageRequestInfolist
                     ->schema([
                         TextEntry::make('activity_name')
                             ->label('Nama Kegiatan'),
-                        TextEntry::make('room.name')
-                            ->label('Ruang Terdaftar')
-                            ->placeholder('-'),
-                        TextEntry::make('room_name')
-                            ->label('Nama Ruang Manual')
+                        TextEntry::make('resolved_room_name')
+                            ->label('Ruang')
                             ->placeholder('-'),
                         TextEntry::make('number_of_participants')
                             ->label('Jumlah Peserta'),

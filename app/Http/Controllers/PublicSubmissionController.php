@@ -7,6 +7,7 @@ use App\Models\RoomUsageRequest;
 use App\Services\Letters\DocumentVerificationService;
 use App\Support\PublicServiceCatalog;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -40,8 +41,7 @@ class PublicSubmissionController extends Controller
             'phone_number' => ['required', 'string', 'max:255'],
             'unit' => ['required', 'string', 'max:255'],
             'activity_name' => ['required', 'string', 'max:500'],
-            'room_id' => ['nullable', 'integer', Rule::exists('rooms', 'id')],
-            'room_name' => ['required_without:room_id', 'nullable', 'string', 'max:255'],
+            'room_id' => ['required', 'integer', Rule::exists('rooms', 'id')],
             'number_of_participants' => ['required', 'integer', 'min:1'],
             'selected_date' => ['required', 'date', 'after_or_equal:today'],
             'start_time' => ['required', 'date_format:H:i'],
@@ -60,28 +60,13 @@ class PublicSubmissionController extends Controller
             config('app.timezone')
         );
 
-        $room = filled($validated['room_id'] ?? null)
-            ? Room::query()->findOrFail($validated['room_id'])
-            : null;
-
-        $resolvedRoomName = $room?->name ?? trim((string) ($validated['room_name'] ?? ''));
-        $normalizedRoomName = mb_strtolower($resolvedRoomName);
+        $room = Room::query()->findOrFail($validated['room_id']);
 
         $hasConflict = RoomUsageRequest::query()
             ->whereIn('status', ['PENDING', 'APPROVED'])
+            ->where('room_id', $room->id)
             ->where('start_at', '<', $endAt)
             ->where('end_at', '>', $startAt)
-            ->where(function ($query) use ($room, $normalizedRoomName): void {
-                if ($room) {
-                    $query
-                        ->where('room_id', $room->id)
-                        ->orWhereRaw('LOWER(room_name) = ?', [$normalizedRoomName]);
-
-                    return;
-                }
-
-                $query->whereRaw('LOWER(room_name) = ?', [$normalizedRoomName]);
-            })
             ->exists();
 
         if ($hasConflict) {
@@ -103,8 +88,8 @@ class PublicSubmissionController extends Controller
             'activity_name' => $validated['activity_name'],
             'start_at' => $startAt,
             'end_at' => $endAt,
-            'room_id' => $room?->id,
-            'room_name' => $resolvedRoomName,
+            'room_id' => $room->id,
+            'room_name' => $room->name,
             'number_of_participants' => $validated['number_of_participants'],
             'status' => 'PENDING',
             'document' => $documentPath,
@@ -112,6 +97,42 @@ class PublicSubmissionController extends Controller
 
         return to_route('booking')
             ->with('success', 'Pengajuan booking ruangan berhasil dikirim. Informasi lanjutan akan dikirim melalui WhatsApp.');
+    }
+
+    public function roomBookings(Room $room): JsonResponse
+    {
+        $bookings = RoomUsageRequest::query()
+            ->where('room_id', $room->id)
+            ->whereIn('status', ['PENDING', 'APPROVED'])
+            ->where('end_at', '>=', Carbon::today(config('app.timezone'))->startOfDay())
+            ->orderBy('start_at')
+            ->get([
+                'id',
+                'room_id',
+                'room_name',
+                'student_name',
+                'activity_name',
+                'unit',
+                'start_at',
+                'end_at',
+                'status',
+            ])
+            ->map(fn (RoomUsageRequest $booking) => [
+                'id' => $booking->id,
+                'roomId' => $booking->room_id,
+                'roomName' => $booking->resolved_room_name,
+                'studentName' => $booking->student_name,
+                'activityName' => $booking->activity_name,
+                'unit' => $booking->unit,
+                'start' => $booking->start_at?->toIso8601String(),
+                'end' => $booking->end_at?->toIso8601String(),
+                'status' => $booking->status,
+            ])
+            ->values();
+
+        return response()->json([
+            'data' => $bookings,
+        ]);
     }
 
     /**

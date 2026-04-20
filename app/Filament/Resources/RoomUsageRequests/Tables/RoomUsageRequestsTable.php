@@ -31,14 +31,10 @@ class RoomUsageRequestsTable
                     ->label('Kegiatan')
                     ->limit(40)
                     ->searchable(),
-                TextColumn::make('room.name')
+                TextColumn::make('resolved_room_name')
                     ->label('Ruang')
                     ->placeholder('-')
                     ->toggleable(),
-                TextColumn::make('room_name')
-                    ->label('Ruang Manual')
-                    ->placeholder('-')
-                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('start_at')
                     ->label('Mulai')
                     ->dateTime('d M Y H:i')

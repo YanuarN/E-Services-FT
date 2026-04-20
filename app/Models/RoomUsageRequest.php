@@ -41,4 +41,17 @@ class RoomUsageRequest extends Model
     {
         return $this->belongsTo(Room::class);
     }
+
+    public function getResolvedRoomNameAttribute(): string
+    {
+        if ($this->relationLoaded('room') && $this->room) {
+            return (string) $this->room->name;
+        }
+
+        if (filled($this->room_name)) {
+            return (string) $this->room_name;
+        }
+
+        return (string) $this->room()->value('name');
+    }
 }

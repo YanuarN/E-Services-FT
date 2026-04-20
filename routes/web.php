@@ -4,7 +4,6 @@ use App\Http\Controllers\DocumentVerificationController;
 use App\Http\Controllers\PublicSubmissionController;
 use App\Models\LetterTemplate;
 use App\Models\Room;
-use App\Models\RoomUsageRequest;
 use App\Support\PublicServiceCatalog;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
@@ -30,38 +29,14 @@ Route::get('/booking', function () {
             'capacity' => $room->capacity,
         ]);
 
-    $bookings = RoomUsageRequest::query()
-        ->whereIn('status', ['PENDING', 'APPROVED'])
-        ->orderBy('start_at')
-        ->get([
-            'id',
-            'room_id',
-            'room_name',
-            'student_name',
-            'activity_name',
-            'unit',
-            'start_at',
-            'end_at',
-            'status',
-        ])
-        ->map(fn (RoomUsageRequest $booking) => [
-            'id' => $booking->id,
-            'roomId' => $booking->room_id,
-            'roomName' => $booking->room_name ?: optional($booking->room)->name ?: 'Ruangan belum ditentukan',
-            'studentName' => $booking->student_name,
-            'activityName' => $booking->activity_name,
-            'unit' => $booking->unit,
-            'start' => $booking->start_at?->toIso8601String(),
-            'end' => $booking->end_at?->toIso8601String(),
-            'status' => $booking->status,
-        ]);
-
     return Inertia::render('Public/RoomBooking', [
         'rooms' => $rooms,
-        'bookings' => $bookings,
         'studyPrograms' => PublicServiceCatalog::studyPrograms(),
     ]);
 })->name('booking');
+
+Route::get('/booking/rooms/{room}/bookings', [PublicSubmissionController::class, 'roomBookings'])
+    ->name('booking.rooms.bookings');
 
 Route::post('/booking', [PublicSubmissionController::class, 'storeRoomBooking'])
     ->name('booking.store');

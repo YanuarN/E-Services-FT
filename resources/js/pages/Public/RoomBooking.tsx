@@ -6,17 +6,15 @@ import { useEffect, useMemo, useState } from 'react';
 import BookingCalendar from '@/components/BookingCalendar/BookingCalendar';
 import InfoCard from '@/components/InfoCard/InfoCard';
 import AppLayout from '@/components/Layout/AppLayout/AppLayout';
+import type { BookingCalendarEvent } from '@/types/Booking';
 import type {
   RoomBookingProps,
   RoomBookingSharedPageProps,
 } from '@/types/pages/Public/RoomBooking';
 import {
   buildAvailabilityMap,
-  filterEventsForRoom,
   findEventsForDate,
 } from '@/utils/BookingAvailability';
-
-const CUSTOM_ROOM_VALUE = '__custom_room__';
 
 const statusLabelMap = {
   APPROVED: 'Disetujui',
@@ -30,12 +28,17 @@ const statusClassMap = {
   REJECTED: 'bg-slate-100 text-slate-700',
 } as const;
 
-const RoomBooking = ({ rooms, bookings, studyPrograms }: RoomBookingProps) => {
+const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
   const [month, setMonth] = useState(startOfMonth(new Date()));
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false);
   const [isFormVisible, setIsFormVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [roomBookings, setRoomBookings] = useState<BookingCalendarEvent[]>([]);
+  const [isRoomBookingsLoading, setIsRoomBookingsLoading] = useState(false);
+  const [roomBookingsError, setRoomBookingsError] = useState<string | null>(
+    null,
+  );
   const { flash } = usePage<RoomBookingSharedPageProps>().props;
 
   const { data, setData, post, processing, errors, reset, clearErrors } =
@@ -47,31 +50,19 @@ const RoomBooking = ({ rooms, bookings, studyPrograms }: RoomBookingProps) => {
       unit: '',
       activity_name: '',
       room_id: '',
-      room_name: '',
       number_of_participants: '',
       selected_date: '',
       start_time: '',
       end_time: '',
       document: null as File | null,
     });
-  const [isCustomRoom, setIsCustomRoom] = useState(Boolean(data.room_name));
 
   const selectedRoom = useMemo(
     () => rooms.find((room) => String(room.id) === data.room_id),
     [data.room_id, rooms],
   );
-  const selectedRoomLabel = selectedRoom?.name ?? data.room_name.trim();
-  const isRoomSelected = selectedRoomLabel.length > 0;
-
-  const roomBookings = useMemo(
-    () =>
-      filterEventsForRoom(
-        bookings,
-        selectedRoom?.id ?? null,
-        selectedRoom?.name ?? data.room_name,
-      ),
-    [bookings, data.room_name, selectedRoom],
-  );
+  const selectedRoomLabel = selectedRoom?.name ?? '';
+  const isRoomSelected = Boolean(selectedRoom);
   const availabilityMap = useMemo(
     () => (isRoomSelected ? buildAvailabilityMap(roomBookings) : {}),
     [isRoomSelected, roomBookings],
@@ -99,6 +90,55 @@ const RoomBooking = ({ rooms, bookings, studyPrograms }: RoomBookingProps) => {
     }
   }, [errors]);
 
+  useEffect(() => {
+    if (!selectedRoom) {
+      setRoomBookings([]);
+      setRoomBookingsError(null);
+      setIsRoomBookingsLoading(false);
+
+      return;
+    }
+
+    const controller = new AbortController();
+
+    setIsRoomBookingsLoading(true);
+    setRoomBookingsError(null);
+
+    window
+      .fetch(`/booking/rooms/${selectedRoom.id}/bookings`, {
+        signal: controller.signal,
+        headers: {
+          Accept: 'application/json',
+        },
+      })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error('Gagal memuat jadwal ruangan.');
+        }
+
+        const payload = (await response.json()) as {
+          data?: BookingCalendarEvent[];
+        };
+
+        setRoomBookings(payload.data ?? []);
+      })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return;
+        }
+
+        setRoomBookings([]);
+        setRoomBookingsError('Jadwal ruangan belum berhasil dimuat.');
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setIsRoomBookingsLoading(false);
+        }
+      });
+
+    return () => controller.abort();
+  }, [selectedRoom]);
+
   const resetBookingFlow = () => {
     setSelectedDate(undefined);
     setIsBookingDialogOpen(false);
@@ -110,24 +150,8 @@ const RoomBooking = ({ rooms, bookings, studyPrograms }: RoomBookingProps) => {
 
   const handleRoomOptionChange = (value: string) => {
     resetBookingFlow();
-    clearErrors(
-      'room_id',
-      'room_name',
-      'selected_date',
-      'start_time',
-      'end_time',
-    );
-
-    if (value === CUSTOM_ROOM_VALUE) {
-      setIsCustomRoom(true);
-      setData('room_id', '');
-      setData('room_name', '');
-      return;
-    }
-
-    setIsCustomRoom(false);
+    clearErrors('room_id', 'selected_date', 'start_time', 'end_time');
     setData('room_id', value);
-    setData('room_name', '');
   };
 
   const handleDateChange = (date: Date | undefined) => {
@@ -148,7 +172,8 @@ const RoomBooking = ({ rooms, bookings, studyPrograms }: RoomBookingProps) => {
       forceFormData: true,
       onSuccess: () => {
         reset();
-        setIsCustomRoom(false);
+        setRoomBookings([]);
+        setRoomBookingsError(null);
         setSelectedDate(undefined);
         setIsBookingDialogOpen(false);
         setIsFormVisible(false);
@@ -239,7 +264,15 @@ const RoomBooking = ({ rooms, bookings, studyPrograms }: RoomBookingProps) => {
             </div>
 
             <div className="mt-6 max-h-[46vh] space-y-3 overflow-y-auto pr-1">
-              {selectedDayEvents.length > 0 ? (
+              {isRoomBookingsLoading ? (
+                <div className="rounded-2xl border border-dashed border-[var(--public-border)] bg-[var(--public-surface-soft)] px-4 py-5 text-sm text-[var(--public-text-muted)]">
+                  Jadwal ruangan sedang dimuat...
+                </div>
+              ) : roomBookingsError ? (
+                <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-5 text-sm text-red-700">
+                  {roomBookingsError}
+                </div>
+              ) : selectedDayEvents.length > 0 ? (
                 selectedDayEvents.map((booking) => (
                   <div
                     key={booking.id}
@@ -318,13 +351,14 @@ const RoomBooking = ({ rooms, bookings, studyPrograms }: RoomBookingProps) => {
                   Pilih Ruangan Terlebih Dahulu
                 </h2>
                 <p className="mt-2 max-w-2xl text-sm text-[var(--public-text-muted)]">
-                  Pilih ruangan dari database, atau gunakan opsi ruangan lain
-                  bila belum tersedia pada daftar.
+                  Pilih ruangan dari data master yang dikelola admin. Kalender
+                  dan daftar peminjam akan memuat jadwal sesuai ruangan yang
+                  Anda pilih.
                 </p>
               </div>
               <div className="rounded-2xl bg-[var(--public-surface-soft)] px-4 py-3 text-sm text-[var(--public-text-muted)]">
-                Kalender akan otomatis mewarnai ketersediaan setelah ruangan
-                dipilih.
+                Jadwal ruangan dimuat langsung dari server saat Anda memilih
+                ruangan.
               </div>
             </div>
 
@@ -334,7 +368,7 @@ const RoomBooking = ({ rooms, bookings, studyPrograms }: RoomBookingProps) => {
                   Daftar Ruangan
                 </label>
                 <select
-                  value={isCustomRoom ? CUSTOM_ROOM_VALUE : data.room_id}
+                  value={data.room_id}
                   onChange={(event) =>
                     handleRoomOptionChange(event.target.value)
                   }
@@ -346,9 +380,6 @@ const RoomBooking = ({ rooms, bookings, studyPrograms }: RoomBookingProps) => {
                       {room.name} (Kapasitas {room.capacity})
                     </option>
                   ))}
-                  <option value={CUSTOM_ROOM_VALUE}>
-                    Ruangan lain, input manual
-                  </option>
                 </select>
                 {errors.room_id ? (
                   <p className="mt-2 text-xs text-red-600">{errors.room_id}</p>
@@ -368,31 +399,10 @@ const RoomBooking = ({ rooms, bookings, studyPrograms }: RoomBookingProps) => {
               </div>
             </div>
 
-            {isCustomRoom ? (
-              <div className="mt-5">
-                <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
-                  Nama Ruangan Manual
-                </label>
-                <input
-                  value={data.room_name}
-                  onChange={(event) => {
-                    if (selectedDate || isFormVisible || isBookingDialogOpen) {
-                      resetBookingFlow();
-                    }
-
-                    setData('room_name', event.target.value);
-                    clearErrors('room_name');
-                  }}
-                  type="text"
-                  placeholder="Contoh: Aula Lt. 2 / Ruang Seminar B"
-                  className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
-                />
-                {errors.room_name ? (
-                  <p className="mt-2 text-xs text-red-600">
-                    {errors.room_name}
-                  </p>
-                ) : null}
-              </div>
+            {roomBookingsError ? (
+              <p className="mt-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {roomBookingsError}
+              </p>
             ) : null}
           </div>
         </div>
@@ -441,7 +451,9 @@ const RoomBooking = ({ rooms, bookings, studyPrograms }: RoomBookingProps) => {
                 </p>
                 <div className="mt-5 h-px bg-white/20" />
                 <p className="mt-5 text-sm text-white/80">
-                  {isRoomSelected
+                  {isRoomBookingsLoading
+                    ? 'Memuat jadwal ruangan terpilih...'
+                    : isRoomSelected
                     ? `${selectedDayEvents.length} booking ditemukan pada tanggal terpilih.`
                     : 'Tentukan ruangan untuk mulai melihat ketersediaan.'}
                 </p>
@@ -471,7 +483,7 @@ const RoomBooking = ({ rooms, bookings, studyPrograms }: RoomBookingProps) => {
                       <span className="font-semibold text-[var(--public-primary-hover)]">
                         Ruangan:
                       </span>{' '}
-                      {selectedRoomLabel}
+                      {selectedRoomLabel || '-'}
                     </p>
                     <p className="mt-1">
                       <span className="font-semibold text-[var(--public-primary-hover)]">

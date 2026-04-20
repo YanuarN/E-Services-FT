@@ -23,8 +23,6 @@ const StatusMap = {
   REJECTED: 'available',
 } as const;
 
-const normalizeRoomName = (roomName: string) => roomName.trim().toLowerCase();
-
 export const buildAvailabilityMap = (
   events: BookingCalendarEvent[],
 ): Record<string, BookingDayAvailability> => {
@@ -76,34 +74,6 @@ export const getAvailabilityForDate = (
   const key = format(date, 'yyyy-MM-dd');
 
   return availabilityMap[key] ?? null;
-};
-
-export const filterEventsForRoom = (
-  events: BookingCalendarEvent[],
-  roomId?: number | null,
-  roomName?: string,
-): BookingCalendarEvent[] => {
-  const normalizedRoomName = roomName ? normalizeRoomName(roomName) : '';
-
-  if (roomId) {
-    return events.filter((event) => {
-      if (event.roomId === roomId) {
-        return true;
-      }
-
-      return normalizedRoomName
-        ? normalizeRoomName(event.roomName) === normalizedRoomName
-        : false;
-    });
-  }
-
-  if (normalizedRoomName) {
-    return events.filter(
-      (event) => normalizeRoomName(event.roomName) === normalizedRoomName,
-    );
-  }
-
-  return [];
 };
 
 export const findEventsForDate = (

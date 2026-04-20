@@ -88,6 +88,6 @@ class RoomUsageRequestDocumentService extends UniversalLetterService
 
     private function resolveRoomName(RoomUsageRequest $letter): string
     {
-        return (string) ($letter->room?->name ?: $letter->room_name ?: '');
+        return $letter->resolved_room_name;
     }
 }
