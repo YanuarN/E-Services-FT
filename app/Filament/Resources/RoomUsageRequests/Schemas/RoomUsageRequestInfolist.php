@@ -39,23 +39,41 @@ class RoomUsageRequestInfolist
                             ->placeholder('-'),
                         TextEntry::make('number_of_participants')
                             ->label('Jumlah Peserta'),
+                        TextEntry::make('status')
+                            ->label('Status')
+                            ->badge()
+                            ->color(fn (string $state): string => match ($state) {
+                                'APPROVE', 'APPROVED' => 'success',
+                                'REJECT', 'REJECTED' => 'danger',
+                                default => 'warning',
+                            }),
+                        TextEntry::make('letter_number')
+                            ->label('Nomor Surat')
+                            ->placeholder('-'),
+                        TextEntry::make('letter_date')
+                            ->label('Tanggal Surat')
+                            ->date('d M Y')
+                            ->placeholder('-'),
+                        TextEntry::make('pdf_path')
+                            ->label('File PDF')
+                            ->placeholder('-'),
+                        TextEntry::make('public_token')
+                            ->label('Token Verifikasi')
+                            ->placeholder('-'),
+                        TextEntry::make('document')
+                            ->label('Dokumen')
+                            ->placeholder('-'),
+                    ])
+                    ->columns(2),
+
+                Section::make('Jadwal')
+                    ->schema([
                         TextEntry::make('start_at')
                             ->label('Mulai')
                             ->dateTime('d M Y H:i'),
                         TextEntry::make('end_at')
                             ->label('Selesai')
                             ->dateTime('d M Y H:i'),
-                        TextEntry::make('status')
-                            ->label('Status')
-                            ->badge()
-                            ->color(fn (string $state): string => match ($state) {
-                                'APPROVED' => 'success',
-                                'REJECTED' => 'danger',
-                                default => 'warning',
-                            }),
-                        TextEntry::make('document')
-                            ->label('Dokumen')
-                            ->placeholder('-'),
                     ])
                     ->columns(2),
 

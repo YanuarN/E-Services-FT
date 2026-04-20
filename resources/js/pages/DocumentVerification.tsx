@@ -12,6 +12,13 @@ const statusAppearance: Record<
     description:
       'Data surat ditemukan dan status surat sudah disetujui di sistem E-Services FT.',
   },
+  APPROVED: {
+    badge: 'bg-emerald-100 text-emerald-700 ring-emerald-200',
+    panel: 'border-emerald-200 bg-emerald-50/80',
+    title: 'Dokumen terverifikasi',
+    description:
+      'Data surat ditemukan dan status surat sudah disetujui di sistem E-Services FT.',
+  },
   REJECT: {
     badge: 'bg-rose-100 text-rose-700 ring-rose-200',
     panel: 'border-rose-200 bg-rose-50/80',
@@ -19,7 +26,21 @@ const statusAppearance: Record<
     description:
       'Data surat tercatat di sistem, namun status surat saat ini tidak disetujui.',
   },
+  REJECTED: {
+    badge: 'bg-rose-100 text-rose-700 ring-rose-200',
+    panel: 'border-rose-200 bg-rose-50/80',
+    title: 'Dokumen ditemukan dengan status ditolak',
+    description:
+      'Data surat tercatat di sistem, namun status surat saat ini tidak disetujui.',
+  },
   SUBMITTED: {
+    badge: 'bg-amber-100 text-amber-700 ring-amber-200',
+    panel: 'border-amber-200 bg-amber-50/80',
+    title: 'Dokumen ditemukan dan masih diproses',
+    description:
+      'Data surat tercatat di sistem, tetapi status surat belum final.',
+  },
+  PENDING: {
     badge: 'bg-amber-100 text-amber-700 ring-amber-200',
     panel: 'border-amber-200 bg-amber-50/80',
     title: 'Dokumen ditemukan dan masih diproses',

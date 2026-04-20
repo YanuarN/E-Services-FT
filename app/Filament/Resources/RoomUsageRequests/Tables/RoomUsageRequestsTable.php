@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\RoomUsageRequests\Tables;
 
+use App\Filament\Support\LetterTableActions;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -51,11 +52,21 @@ class RoomUsageRequestsTable
                     ->label('Status')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'APPROVED' => 'success',
-                        'REJECTED' => 'danger',
+                        'APPROVE', 'APPROVED' => 'success',
+                        'REJECT', 'REJECTED' => 'danger',
                         default => 'warning',
                     })
                     ->sortable(),
+                TextColumn::make('letter_number')
+                    ->label('Nomor Surat')
+                    ->placeholder('-')
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('pdf_path')
+                    ->label('PDF')
+                    ->formatStateUsing(fn (?string $state): string => filled($state) ? 'Tersedia' : '-')
+                    ->badge()
+                    ->color(fn (?string $state): string => filled($state) ? 'success' : 'gray')
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('created_at')
                     ->label('Dibuat')
                     ->dateTime('d M Y H:i')
@@ -70,6 +81,8 @@ class RoomUsageRequestsTable
                     ]),
             ])
             ->recordActions([
+                LetterTableActions::accept(),
+                LetterTableActions::reject(),
                 ViewAction::make(),
                 EditAction::make(),
             ])

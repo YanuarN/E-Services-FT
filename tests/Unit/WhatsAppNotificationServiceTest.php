@@ -38,7 +38,7 @@ class WhatsAppNotificationServiceTest extends TestCase
         $this->assertStringContainsString('FT/045/IV/2026', $decodedUrl);
     }
 
-    public function test_it_builds_reject_url_using_fallback_model_name_when_model_is_not_registered(): void
+    public function test_it_builds_reject_url_for_registered_room_usage_request(): void
     {
         $record = new RoomUsageRequest([
             'student_name' => 'Budi Santoso',
@@ -50,7 +50,7 @@ class WhatsAppNotificationServiceTest extends TestCase
 
         $this->assertNotNull($url);
         $this->assertStringContainsString('https://wa.me/6281300000000?text=', $url);
-        $this->assertStringContainsString('Room Usage Request', $decodedUrl);
+        $this->assertStringContainsString('Formulir Peminjaman Ruangan', $decodedUrl);
         $this->assertStringContainsString('Lampiran belum lengkap', $decodedUrl);
     }
 

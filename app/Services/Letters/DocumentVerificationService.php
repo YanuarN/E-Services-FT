@@ -11,6 +11,7 @@ use App\Models\LetterTemplate;
 use App\Models\PassportApplicationLetter;
 use App\Models\ResearchDataRequestLetter;
 use App\Models\ResearchPermissionLetter;
+use App\Models\RoomUsageRequest;
 use App\Models\ScholarshipsStatementLetter;
 use App\Models\TestingPermissionRequestLetter;
 use Illuminate\Database\Eloquent\Model;
@@ -56,6 +57,10 @@ class DocumentVerificationService
             'research_permission' => [
                 'model' => ResearchPermissionLetter::class,
                 'service' => ResearchPermissionLetterDocumentService::class,
+            ],
+            'room_usage_request' => [
+                'model' => RoomUsageRequest::class,
+                'service' => RoomUsageRequestDocumentService::class,
             ],
             'scholarships_statement' => [
                 'model' => ScholarshipsStatementLetter::class,

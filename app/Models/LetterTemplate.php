@@ -15,6 +15,7 @@ class LetterTemplate extends Model
         'passport_application' => 'Surat Pengantar Pembuatan Paspor (Mahasiswa)',
         'research_data_request' => 'Surat Permohonan Data Untuk Penelitian',
         'research_permission' => 'Surat Izin Survey Untuk Penelitian',
+        'room_usage_request' => 'Formulir Peminjaman Ruangan',
         'scholarships_statement' => 'Surat Keterangan Tidak Menerima Beasiswa Lain',
         'testing_permission_request' => 'Surat Permohonan Izin Pengujian Alat Hasil Penelitian',
     ];

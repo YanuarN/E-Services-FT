@@ -128,11 +128,14 @@ Karena queue, session, dan cache default-nya memakai database, pastikan semua ta
 ```bash
 php artisan migrate --force
 php artisan storage:link
+php artisan filament:assets
 php artisan optimize:clear
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 ```
+
+Jika ada perubahan package, theme, atau asset panel admin Filament, jalankan `php artisan filament:assets` lagi agar asset terbaru ikut ter-publish ke folder `public`.
 
 ## 7. Atur permission folder
 
@@ -288,6 +291,7 @@ composer install --no-dev --optimize-autoloader
 npm install
 npm run build
 php artisan migrate --force
+php artisan filament:assets
 php artisan optimize:clear
 php artisan config:cache
 php artisan route:cache

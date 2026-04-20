@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasPublicToken;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class RoomUsageRequest extends Model
 {
+    use HasPublicToken;
+
     protected $fillable = [
         'student_name',
         'nim',
@@ -21,12 +24,17 @@ class RoomUsageRequest extends Model
         'number_of_participants',
         'status',
         'document',
+        'public_token',
+        'letter_number',
+        'letter_date',
+        'pdf_path',
     ];
 
     protected $casts = [
         'start_at' => 'datetime',
         'end_at' => 'datetime',
         'number_of_participants' => 'integer',
+        'letter_date' => 'date',
     ];
 
     public function room(): BelongsTo

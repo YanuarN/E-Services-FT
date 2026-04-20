@@ -2,6 +2,7 @@
 
 namespace App\Filament\Support;
 
+use App\Models\RoomUsageRequest;
 use App\Services\Letters\DocumentVerificationService;
 use App\Services\Letters\UniversalLetterService;
 use Filament\Actions\Action;
@@ -21,31 +22,37 @@ class LetterTableActions
             ->label('Accept')
             ->icon(Heroicon::OutlinedCheckCircle)
             ->color('success')
-            ->visible(fn (Model $record): bool => $record->getAttribute('status') === 'SUBMITTED')
+            ->visible(fn (Model $record): bool => static::isPending($record))
             ->modalHeading('Accept dan Generate Surat')
-            ->modalDescription('Isi nomor surat dan tanggal surat. Setelah disimpan, surat akan diproses menjadi approved.')
+            ->modalDescription(fn (Model $record): string => static::requiresLetterNumber($record)
+                ? 'Isi nomor surat dan tanggal surat. Setelah disimpan, surat akan diproses menjadi approved.'
+                : 'Isi tanggal surat. Setelah disimpan, surat akan diproses menjadi approved.')
             ->fillForm(fn (Model $record): array => [
                 'letter_number' => $record->getAttribute('letter_number'),
                 'letter_date' => $record->getAttribute('letter_date')
                     ? Carbon::parse($record->getAttribute('letter_date'))->toDateString()
                     : now()->toDateString(),
             ])
-            ->schema([
-                TextInput::make('letter_number')
-                    ->label('Nomor Surat')
-                    ->required()
-                    ->maxLength(255),
+            ->schema(fn (Model $record): array => array_values(array_filter([
+                static::requiresLetterNumber($record)
+                    ? TextInput::make('letter_number')
+                        ->label('Nomor Surat')
+                        ->required()
+                        ->maxLength(255)
+                    : null,
                 DatePicker::make('letter_date')
                     ->label('Tanggal Surat')
                     ->required()
                     ->native(false),
-            ])
+            ])))
             ->action(function (Model $record, array $data) {
                 try {
                     $service = static::resolveService($record);
 
                     $record->forceFill([
-                        'letter_number' => $data['letter_number'],
+                        'letter_number' => static::requiresLetterNumber($record)
+                            ? ($data['letter_number'] ?? null)
+                            : $record->getAttribute('letter_number'),
                         'letter_date' => $data['letter_date'],
                     ]);
 
@@ -54,7 +61,7 @@ class LetterTableActions
                     $pdfPath = $service->generatePdf($record);
 
                     $record->forceFill([
-                        'status' => 'APPROVE',
+                        'status' => static::approvedStatus($record),
                         'pdf_path' => $pdfPath,
                     ])->save();
 
@@ -84,11 +91,11 @@ class LetterTableActions
             ->requiresConfirmation()
             ->modalHeading('Reject pengajuan surat?')
             ->modalDescription('Status pengajuan akan diubah menjadi reject.')
-            ->visible(fn (Model $record): bool => $record->getAttribute('status') === 'SUBMITTED')
+            ->visible(fn (Model $record): bool => static::isPending($record))
             ->action(function (Model $record) {
                 try {
                     $record->forceFill([
-                        'status' => 'REJECT',
+                        'status' => static::rejectedStatus($record),
                     ])->save();
 
                     Notification::make()
@@ -115,5 +122,30 @@ class LetterTableActions
         $service = app($definition['service']);
 
         return $service;
+    }
+
+    private static function isPending(Model $record): bool
+    {
+        return in_array((string) $record->getAttribute('status'), ['SUBMITTED', 'PENDING'], true);
+    }
+
+    private static function approvedStatus(Model $record): string
+    {
+        return static::isRoomUsageStatusSet($record) ? 'APPROVED' : 'APPROVE';
+    }
+
+    private static function rejectedStatus(Model $record): string
+    {
+        return static::isRoomUsageStatusSet($record) ? 'REJECTED' : 'REJECT';
+    }
+
+    private static function isRoomUsageStatusSet(Model $record): bool
+    {
+        return $record instanceof RoomUsageRequest;
+    }
+
+    private static function requiresLetterNumber(Model $record): bool
+    {
+        return ! static::isRoomUsageStatusSet($record);
     }
 }

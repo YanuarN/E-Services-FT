@@ -232,7 +232,40 @@ Kode template: `research_permission`
 - `${nama_instansi}`
 - `${alamat_instansi}`
 
-## 9. Surat Keterangan Tidak Menerima Beasiswa Lain
+## 9. Formulir Peminjaman Ruangan
+
+Service: `RoomUsageRequestDocumentService`
+Kode template: `room_usage_request`
+
+### Placeholder
+
+- `${nama_mahasiswa}`
+- `${nama}`
+- `${nama_peminjam}`
+- `${nim}`
+- `${program_studi}`
+- `${prodi}`
+- `${nomor_telepon}`
+- `${no_hp}`
+- `${no_telp}`
+- `${unit}`
+- `${kegiatan}`
+- `${nama_kegiatan}`
+- `${tanggal_penggunaan}`
+- `${tanggal_peminjaman}`
+- `${tanggal_pengajuan}`
+- `${tanggal_permohonan}`
+- `${waktu_mulai}`
+- `${waktu_selesai}`
+- `${waktu_penggunaan}`
+- `${waktu}`
+- `${pukul}`
+- `${tempat_ruang}`
+- `${ruang}`
+- `${tempat}`
+- `${jumlah_peserta}`
+
+## 10. Surat Keterangan Tidak Menerima Beasiswa Lain
 
 Service: `ScholarshipsStatementLetterDocumentService`
 Kode template: `scholarships_statement`
@@ -248,7 +281,7 @@ Kode template: `scholarships_statement`
 - `${nama_beasiswa}`
 - `${penyedia_beasiswa}`
 
-## 10. Surat Permohonan Izin Pengujian Alat
+## 11. Surat Permohonan Izin Pengujian Alat
 
 Service: `TestingPermissionRequestLetterDocumentService`
 Kode template: `testing_permission_request`
