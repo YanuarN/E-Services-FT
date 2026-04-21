@@ -1,59 +1,241 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# E-Services-FT
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+`E-Services-FT` adalah aplikasi layanan fakultas berbasis Laravel 12 yang menggunakan React, Inertia, Vite, dan Filament Admin Panel. Aplikasi ini menyediakan layanan publik seperti pengajuan surat, booking ruangan, dan verifikasi dokumen.
 
-## About Laravel
+## Fitur Utama
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- Form pengajuan berbagai jenis surat secara online
+- Booking ruangan dari halaman publik
+- Verifikasi dokumen melalui token publik
+- Panel admin berbasis Filament di path `/admin`
+- Queue, session, dan cache berbasis database
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Teknologi yang Digunakan
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- PHP `^8.2`
+- Laravel `^12.0`
+- React `^18`
+- Inertia.js `^2.0`
+- Vite `^7`
+- Filament `^4.0`
+- SQLite atau MySQL/MariaDB
 
-## Learning Laravel
+## Prasyarat
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+Pastikan perangkat lokal sudah terpasang:
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+- PHP 8.2 atau lebih baru
+- Composer 2
+- Node.js 20 atau lebih baru
+- npm
+- Database:
+  - SQLite untuk setup cepat lokal, atau
+  - MySQL/MariaDB jika ingin menggunakan database server
 
-## Laravel Sponsors
+## Instalasi Project
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+1. Clone repository lalu masuk ke folder project:
 
-### Premium Partners
+```bash
+git clone <repo-url> E-Services-FT
+cd E-Services-FT
+```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+2. Install dependency backend:
 
-## Contributing
+```bash
+composer install
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+3. Install dependency frontend:
 
-## Code of Conduct
+```bash
+npm install
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## Konfigurasi Environment
 
-## Security Vulnerabilities
+1. Copy file environment:
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+cp .env.example .env
+```
 
-## License
+2. Generate application key:
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```bash
+php artisan key:generate
+```
+
+3. Secara default project menggunakan SQLite. Jika tetap menggunakan SQLite, buat file databasenya:
+
+```bash
+touch database/database.sqlite
+```
+
+4. Pastikan isi `.env` untuk mode lokal minimal seperti berikut:
+
+```env
+APP_NAME="E-Services-FT"
+APP_ENV=local
+APP_DEBUG=true
+APP_URL=http://127.0.0.1:8000
+
+DB_CONNECTION=sqlite
+
+QUEUE_CONNECTION=database
+SESSION_DRIVER=database
+CACHE_STORE=database
+
+WHATSAPP_BASE_URL=https://wa.me
+WHATSAPP_APP_URL="${APP_URL}"
+```
+
+Jika ingin memakai MySQL/MariaDB, ubah bagian database pada `.env`:
+
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=eservices_ft
+DB_USERNAME=root
+DB_PASSWORD=
+```
+
+## Menyiapkan Database
+
+Jalankan migrasi agar seluruh tabel aplikasi, queue, session, dan cache dibuat:
+
+```bash
+php artisan migrate
+```
+
+Jika ingin sekaligus mengisi data awal seperti akun admin dan data ruangan, jalankan:
+
+```bash
+php artisan db:seed
+```
+
+Seeder bawaan akan membuat akun berikut:
+
+- Super Admin
+  - Email: `superadmin@eservices.test`
+  - Password: `password`
+- Admin Fakultas
+  - Email: `adminfakultas@eservices.test`
+  - Password: `password`
+
+## Cara Menjalankan Project
+
+Ada dua cara yang bisa dipakai.
+
+### Opsi 1: Menjalankan semua service sekaligus
+
+Perintah ini akan menjalankan:
+
+- Laravel development server
+- Queue listener
+- Log watcher
+- Vite dev server
+
+Gunakan:
+
+```bash
+composer run dev
+```
+
+Lalu buka aplikasi di:
+
+- Frontend publik: `http://127.0.0.1:8000`
+- Admin panel: `http://127.0.0.1:8000/admin`
+
+### Opsi 2: Menjalankan manual per service
+
+Jika ingin dijalankan terpisah, gunakan terminal berbeda:
+
+Terminal 1:
+
+```bash
+php artisan serve
+```
+
+Terminal 2:
+
+```bash
+npm run dev
+```
+
+Terminal 3:
+
+```bash
+php artisan queue:listen --tries=1 --timeout=0
+```
+
+Opsional untuk melihat log secara realtime:
+
+```bash
+php artisan pail --timeout=0
+```
+
+## Build untuk Production
+
+Untuk build asset frontend production:
+
+```bash
+npm run build
+```
+
+Jika ingin build SSR juga:
+
+```bash
+npm run build:ssr
+```
+
+## Shortcut Setup Cepat
+
+Project ini memiliki script Composer `setup` untuk membantu instalasi awal:
+
+```bash
+composer run setup
+```
+
+Script tersebut akan menjalankan proses berikut:
+
+- `composer install`
+- membuat file `.env` jika belum ada
+- `php artisan key:generate`
+- `php artisan migrate --force`
+- `npm install`
+- `npm run build`
+
+Catatan:
+- Script ini tidak menjalankan `db:seed`
+- Untuk SQLite, pastikan file `database/database.sqlite` sudah tersedia sebelum migrasi bila diperlukan
+
+## Testing
+
+Untuk menjalankan test:
+
+```bash
+composer test
+```
+
+Atau langsung dengan Artisan:
+
+```bash
+php artisan test
+```
+
+## Struktur Akses Aplikasi
+
+- Halaman utama: `/`
+- Daftar layanan: `/services`
+- Booking ruangan: `/booking`
+- Panduan: `/guidelines`
+- Form layanan: `/form/{letterType}`
+- Verifikasi dokumen: `/verify/{letterType}/{token}`
+- Admin panel: `/admin`
+
+## Dokumentasi Tambahan
+
+Untuk panduan deploy ke VPS, lihat file [DEPLOY-VPS.md](/run/media/yanuar/New%20Volume/Kerjaan/Side%20Hustle/E-Services-FT/DEPLOY-VPS.md).
