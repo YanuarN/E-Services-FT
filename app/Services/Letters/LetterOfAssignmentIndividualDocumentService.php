@@ -28,7 +28,6 @@ class LetterOfAssignmentIndividualDocumentService extends UniversalLetterService
             [
                 'departement' => $letter->departement,
                 'fakultas' => $letter->faculty,
-                'alamat' => $letter->address,
                 'penugasan' => $letter->assignment,
                 'tempat' => $letter->place,
                 'tanggal_kegiatan' => $assignmentDate,
@@ -50,7 +49,6 @@ class LetterOfAssignmentIndividualDocumentService extends UniversalLetterService
             $this->makeVerificationField('NIM', $letter->nim),
             $this->makeVerificationField('Departemen', $letter->departement),
             $this->makeVerificationField('Fakultas', $letter->faculty),
-            $this->makeVerificationField('Alamat', $letter->address),
             $this->makeVerificationField('Penugasan', $letter->assignment),
             $this->makeVerificationField('Tempat', $letter->place),
             $this->makeVerificationField('Tanggal Kegiatan', $this->formatDate($letter->date)),

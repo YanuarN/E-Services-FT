@@ -78,7 +78,6 @@ class PublicServiceCatalog
                     ['name' => 'nim', 'label' => 'NIM', 'type' => 'text', 'required' => true],
                     ['name' => 'departement', 'label' => 'Jurusan', 'type' => 'text', 'required' => true],
                     ['name' => 'faculty', 'label' => 'Fakultas', 'type' => 'text', 'required' => true],
-                    ['name' => 'address', 'label' => 'Alamat', 'type' => 'textarea', 'required' => true, 'rows' => 3],
                     ['name' => 'assignment', 'label' => 'Penugasan', 'type' => 'textarea', 'required' => true, 'rows' => 3],
                     ['name' => 'place', 'label' => 'Tempat', 'type' => 'text', 'required' => true],
                     ['name' => 'date', 'label' => 'Tanggal Kegiatan', 'type' => 'date', 'required' => true],

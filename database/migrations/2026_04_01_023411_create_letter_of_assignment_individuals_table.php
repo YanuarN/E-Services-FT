@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('nim');
             $table->string('departement');
             $table->string('faculty');
-            $table->text('address');
+            $table->text('address')->nullable();
             $table->text('assignment');
             $table->string('place');
             $table->date('date');
