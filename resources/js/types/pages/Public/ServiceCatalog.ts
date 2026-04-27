@@ -29,6 +29,7 @@ export type ServiceFormProps = {
 export type SharedPageProps = {
   flash?: {
     success?: string;
+    whatsappUrl?: string | null;
   };
 };
 

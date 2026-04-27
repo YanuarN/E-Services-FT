@@ -8,6 +8,7 @@ export type RoomBookingProps = {
 export type RoomBookingSharedPageProps = {
   flash?: {
     success?: string;
+    whatsappUrl?: string | null;
   };
   roomBookings?: BookingCalendarEvent[];
 };

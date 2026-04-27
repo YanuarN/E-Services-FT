@@ -2,14 +2,18 @@
 
 namespace Tests\Unit;
 
+use App\Models\AdminWhatsappContact;
 use App\Models\ExamPermissionLetter;
 use App\Models\ResearchPermissionLetter;
 use App\Models\RoomUsageRequest;
 use App\Services\WhatsAppNotificationService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class WhatsAppNotificationServiceTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function test_it_normalizes_indonesian_phone_numbers(): void
     {
         $this->assertSame('628123456789', WhatsAppNotificationService::normalizePhoneNumber('0812-3456-789'));
@@ -33,9 +37,10 @@ class WhatsAppNotificationServiceTest extends TestCase
 
         $this->assertNotNull($url);
         $this->assertStringContainsString('https://wa.me/6281234567890?text=', $url);
-        $this->assertStringContainsString('Siti Rahma', $decodedUrl);
-        $this->assertStringContainsString('Surat Izin Survey Untuk Penelitian', $decodedUrl);
-        $this->assertStringContainsString('FT/045/IV/2026', $decodedUrl);
+        $this->assertStringContainsString('Notifikasi Sistem Informasi Surat - Surat Izin Survey Untuk Penelitian', $decodedUrl);
+        $this->assertStringContainsString('Halo, Siti Rahma.', $decodedUrl);
+        $this->assertStringContainsString('Status: DISETUJUI / SELESAI', $decodedUrl);
+        $this->assertStringContainsString('https://e-service-ft.test/verification/research_permission/VERIFYTOKEN12345', $decodedUrl);
     }
 
     public function test_it_builds_reject_url_for_registered_room_usage_request(): void
@@ -50,8 +55,9 @@ class WhatsAppNotificationServiceTest extends TestCase
 
         $this->assertNotNull($url);
         $this->assertStringContainsString('https://wa.me/6281300000000?text=', $url);
-        $this->assertStringContainsString('Formulir Peminjaman Ruangan', $decodedUrl);
+        $this->assertStringContainsString('Pemberitahuan Status Ajuan Surat Formulir Peminjaman Ruangan', $decodedUrl);
         $this->assertStringContainsString('Lampiran belum lengkap', $decodedUrl);
+        $this->assertStringContainsString(route('booking'), $decodedUrl);
     }
 
     public function test_it_returns_null_when_record_has_no_phone_number(): void
@@ -63,5 +69,52 @@ class WhatsAppNotificationServiceTest extends TestCase
 
         $this->assertNull(WhatsAppNotificationService::buildApproveUrl($record));
         $this->assertNull(WhatsAppNotificationService::buildRejectUrl($record));
+    }
+
+    public function test_it_builds_submission_url_for_letter_request_to_admin(): void
+    {
+        AdminWhatsappContact::query()->create([
+            'whatsapp_number' => '081298765432',
+        ]);
+
+        $record = new ResearchPermissionLetter([
+            'student_name' => 'Siti Rahma',
+            'nim' => '221234567',
+            'phone_number' => '081234567890',
+        ]);
+
+        $url = WhatsAppNotificationService::buildSubmissionUrl($record);
+        $decodedUrl = urldecode((string) $url);
+
+        $this->assertNotNull($url);
+        $this->assertStringContainsString('https://wa.me/6281298765432?text=', $url);
+        $this->assertStringContainsString('Konfirmasi Pengajuan Surat Surat Izin Survey Untuk Penelitian', $decodedUrl);
+        $this->assertStringContainsString('Nama: Siti Rahma', $decodedUrl);
+        $this->assertStringContainsString('NIM: 221234567', $decodedUrl);
+    }
+
+    public function test_it_builds_submission_url_for_room_booking_to_admin(): void
+    {
+        AdminWhatsappContact::query()->create([
+            'whatsapp_number' => '+628111222333',
+        ]);
+
+        $record = new RoomUsageRequest([
+            'student_name' => 'Budi Santoso',
+            'nim' => '22001122',
+            'room_name' => 'Lab Komputer 1',
+            'activity_name' => 'Rapat Panitia',
+            'start_at' => '2026-04-30 09:00:00',
+        ]);
+
+        $url = WhatsAppNotificationService::buildSubmissionUrl($record);
+        $decodedUrl = urldecode((string) $url);
+
+        $this->assertNotNull($url);
+        $this->assertStringContainsString('https://wa.me/628111222333?text=', $url);
+        $this->assertStringContainsString('Konfirmasi Pengajuan Peminjaman Ruang Lab Komputer 1', $decodedUrl);
+        $this->assertStringContainsString('Ruang: Lab Komputer 1', $decodedUrl);
+        $this->assertStringContainsString('Agenda: Rapat Panitia', $decodedUrl);
+        $this->assertStringContainsString('Tanggal Peminjaman: 30 April 2026', $decodedUrl);
     }
 }

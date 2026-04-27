@@ -1,5 +1,5 @@
-import { Head } from '@inertiajs/react';
 import type { DocumentVerificationProps } from '@/types/pages/DocumentVerification';
+import { Head } from '@inertiajs/react';
 
 const statusAppearance: Record<
   string,

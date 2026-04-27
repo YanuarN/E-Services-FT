@@ -36,6 +36,7 @@ class HandleInertiaRequests extends Middleware
             ],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
+                'whatsappUrl' => fn () => $request->session()->get('whatsappUrl'),
             ],
         ];
     }

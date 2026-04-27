@@ -1,6 +1,6 @@
+import type { BreadcrumbProps } from '@/types/components/Breadcrumb';
 import { Link } from '@inertiajs/react';
 import React from 'react';
-import type { BreadcrumbProps } from '@/types/components/Breadcrumb';
 
 const Breadcrumb = ({ items }: BreadcrumbProps) => {
   return (

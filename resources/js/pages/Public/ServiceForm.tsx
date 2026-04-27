@@ -37,7 +37,9 @@ const buildRowsFromValue = (value: string): MemberFormRow[] => {
     .map((line) => line.trim())
     .filter(Boolean)
     .map((line) => {
-      const [name = '', nim = '', studyProgram = ''] = line.split('-').map((part) => part.trim());
+      const [name = '', nim = '', studyProgram = ''] = line
+        .split('-')
+        .map((part) => part.trim());
 
       return {
         id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -50,13 +52,20 @@ const buildRowsFromValue = (value: string): MemberFormRow[] => {
   return rows.length > 0 ? rows : [createMemberRow()];
 };
 
-const ServiceForm = ({ service, services, studyPrograms }: ServiceFormProps) => {
+const ServiceForm = ({
+  service,
+  services,
+  studyPrograms,
+}: ServiceFormProps) => {
   const { flash } = usePage<SharedPageProps>().props;
 
-  const initialData = service.fields.reduce<Record<string, string>>((acc, field) => {
-    acc[field.name] = '';
-    return acc;
-  }, {});
+  const initialData = service.fields.reduce<Record<string, string>>(
+    (acc, field) => {
+      acc[field.name] = '';
+      return acc;
+    },
+    {},
+  );
 
   const { data, setData, post, processing, errors } = useForm(initialData);
 
@@ -65,7 +74,9 @@ const ServiceForm = ({ service, services, studyPrograms }: ServiceFormProps) => 
     [service.fields],
   );
 
-  const [memberRowsByField, setMemberRowsByField] = useState<Record<string, MemberFormRow[]>>(() =>
+  const [memberRowsByField, setMemberRowsByField] = useState<
+    Record<string, MemberFormRow[]>
+  >(() =>
     memberFields.reduce<Record<string, MemberFormRow[]>>((acc, field) => {
       acc[field.name] = buildRowsFromValue(initialData[field.name] ?? '');
       return acc;
@@ -90,7 +101,10 @@ const ServiceForm = ({ service, services, studyPrograms }: ServiceFormProps) => 
     const currentRows = memberRowsByField[fieldName] ?? [];
     const nextRows = currentRows.filter((row) => row.id !== rowId);
 
-    updateMemberRows(fieldName, nextRows.length > 0 ? nextRows : [createMemberRow()]);
+    updateMemberRows(
+      fieldName,
+      nextRows.length > 0 ? nextRows : [createMemberRow()],
+    );
   };
 
   const handleMemberChange = (
@@ -124,7 +138,10 @@ const ServiceForm = ({ service, services, studyPrograms }: ServiceFormProps) => 
       <div className="space-y-4">
         <div className="space-y-3">
           {rows.map((row, index) => (
-            <div key={row.id} className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+            <div
+              key={row.id}
+              className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
+            >
               <div className="mb-4 flex items-center justify-between">
                 <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
                   Anggota {index + 1}
@@ -143,20 +160,39 @@ const ServiceForm = ({ service, services, studyPrograms }: ServiceFormProps) => 
                   type="text"
                   value={row.name}
                   placeholder="Nama anggota"
-                  onChange={(event) => handleMemberChange(field.name, row.id, 'name', event.target.value)}
+                  onChange={(event) =>
+                    handleMemberChange(
+                      field.name,
+                      row.id,
+                      'name',
+                      event.target.value,
+                    )
+                  }
                   className={commonClassName}
                 />
                 <input
                   type="text"
                   value={row.nim}
                   placeholder="NIM anggota"
-                  onChange={(event) => handleMemberChange(field.name, row.id, 'nim', event.target.value)}
+                  onChange={(event) =>
+                    handleMemberChange(
+                      field.name,
+                      row.id,
+                      'nim',
+                      event.target.value,
+                    )
+                  }
                   className={commonClassName}
                 />
                 <select
                   value={row.studyProgram}
                   onChange={(event) =>
-                    handleMemberChange(field.name, row.id, 'studyProgram', event.target.value)
+                    handleMemberChange(
+                      field.name,
+                      row.id,
+                      'studyProgram',
+                      event.target.value,
+                    )
                   }
                   className={commonClassName}
                 >
@@ -263,12 +299,26 @@ const ServiceForm = ({ service, services, studyPrograms }: ServiceFormProps) => 
             <div className="rounded-xl border border-gray-100 bg-white p-8 shadow-[0_8px_30px_rgba(27,42,107,0.04)]">
               {flash?.success ? (
                 <div className="mb-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
-                  {flash.success}
+                  <p>{flash.success}</p>
+                  {flash.whatsappUrl ? (
+                    <a
+                      href={flash.whatsappUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-3 inline-flex items-center rounded-md bg-green-600 px-4 py-2 font-semibold text-white transition hover:bg-green-700"
+                    >
+                      Lanjutkan ke WhatsApp Admin
+                    </a>
+                  ) : null}
                 </div>
               ) : null}
 
-              <h3 className="mb-2 text-[1.125rem] font-semibold text-primary">{service.title}</h3>
-              <p className="mb-8 text-sm text-gray-500">{service.description}</p>
+              <h3 className="mb-2 text-[1.125rem] font-semibold text-primary">
+                {service.title}
+              </h3>
+              <p className="mb-8 text-sm text-gray-500">
+                {service.description}
+              </p>
 
               <form className="space-y-6" onSubmit={handleSubmit}>
                 {service.fields.map((field) => (
@@ -278,8 +328,16 @@ const ServiceForm = ({ service, services, studyPrograms }: ServiceFormProps) => 
                       {field.required ? ' *' : ''}
                     </label>
                     {renderField(field)}
-                    {field.helpText ? <p className="mt-2 text-xs text-gray-500">{field.helpText}</p> : null}
-                    {errors[field.name] ? <p className="mt-2 text-xs text-red-600">{errors[field.name]}</p> : null}
+                    {field.helpText ? (
+                      <p className="mt-2 text-xs text-gray-500">
+                        {field.helpText}
+                      </p>
+                    ) : null}
+                    {errors[field.name] ? (
+                      <p className="mt-2 text-xs text-red-600">
+                        {errors[field.name]}
+                      </p>
+                    ) : null}
                   </div>
                 ))}
 
@@ -317,7 +375,8 @@ const ServiceForm = ({ service, services, studyPrograms }: ServiceFormProps) => 
                 ))}
               </div>
               <div className="mt-6 rounded-lg border border-gray-100 bg-[#F8F9FB] p-4 text-sm text-gray-600">
-                Notifikasi status pengajuan dikirim melalui WhatsApp ke nomor yang Anda isi pada formulir.
+                Notifikasi status pengajuan dikirim melalui WhatsApp ke nomor
+                yang Anda isi pada formulir.
               </div>
             </div>
           </div>

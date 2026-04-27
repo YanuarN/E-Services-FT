@@ -1,5 +1,5 @@
-import { Link } from '@inertiajs/react';
 import type { ServiceCardProps } from '@/types/components/ServiceCard';
+import { Link } from '@inertiajs/react';
 
 const ServiceCard = ({ title, items, href, icon }: ServiceCardProps) => {
   return (

@@ -1,5 +1,5 @@
-import { Link } from '@inertiajs/react';
 import type { CtaPanelProps } from '@/types/components/CtaPanel';
+import { Link } from '@inertiajs/react';
 
 const CtaPanel = ({
   title,

@@ -1,5 +1,5 @@
-import { Link } from '@inertiajs/react';
 import type { PageHeroProps } from '@/types/components/PageHero';
+import { Link } from '@inertiajs/react';
 
 const PageHero = ({ title, description, actions }: PageHeroProps) => {
   return (

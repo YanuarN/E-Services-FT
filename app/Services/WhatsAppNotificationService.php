@@ -2,9 +2,13 @@
 
 namespace App\Services;
 
+use App\Models\AdminWhatsappContact;
 use App\Models\LetterTemplate;
+use App\Models\RoomUsageRequest;
 use App\Services\Letters\DocumentVerificationService;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Throwable;
 
@@ -80,6 +84,34 @@ class WhatsAppNotificationService
     }
 
     /**
+     * Build the message body for a submission notification to admin.
+     */
+    public static function buildSubmissionMessage(Model $record): string
+    {
+        if ($record instanceof RoomUsageRequest) {
+            return self::buildRoomSubmissionMessage($record);
+        }
+
+        $studentName = self::getStudentName($record);
+        $nim = self::getStudentNim($record);
+        $letterType = self::getLetterTypeName($record);
+        $submittedDate = self::formatRecordDate(now());
+
+        return implode("\n", [
+            "Konfirmasi Pengajuan Surat {$letterType}",
+            '',
+            'Yth. Admin Fakultas Teknik,',
+            'Saya telah mengisi formulir pengajuan surat pada sistem website. Berikut adalah detail data saya:',
+            "Nama: {$studentName}",
+            "NIM: {$nim}",
+            "Jenis Surat: {$letterType}",
+            "Tanggal Pengajuan: {$submittedDate}",
+            '',
+            'Mohon kesediaannya untuk memeriksa dan memproses ajuan tersebut. Terima kasih.',
+        ]);
+    }
+
+    /**
      * Build the message body for an APPROVED notification.
      */
     public static function buildApproveMessage(Model $record, ?string $documentUrl = null): string
@@ -87,31 +119,16 @@ class WhatsAppNotificationService
         $studentName = self::getStudentName($record);
         $letterType = self::getLetterTypeName($record);
         $destinationUrl = self::resolveDestinationUrl($documentUrl);
-        $letterNumber = (string) ($record->getAttribute('letter_number') ?? '');
 
-        $message = [
-            "Notifikasi E-Service Fakultas Teknik - {$letterType}",
-            '',
-            "Halo, *{$studentName}*.",
-            "Pengajuan surat Anda untuk *{$letterType}* telah *DISETUJUI / SELESAI*.",
-        ];
-
-        if ($letterNumber !== '') {
-            $message[] = "Nomor surat: *{$letterNumber}*";
-        }
-
-        $message = [
-            ...$message,
-            '',
-            'Anda dapat melihat atau mengunduh dokumen melalui tautan berikut:',
-            "🔗 {$destinationUrl}",
-            '',
-            'Dokumen ini dilengkapi QR Code untuk verifikasi keabsahan surat.',
-            '',
+        return implode("\n", [
+            "Notifikasi Sistem Informasi Surat - {$letterType}",
+            "Halo, {$studentName}. Pengajuan surat Anda untuk:",
+            "Jenis Surat: {$letterType}",
+            'Status: DISETUJUI / SELESAI',
+            "Anda dapat melihat dan mengunduh surat tersebut secara mandiri melalui tautan resmi berikut: 🔗 {$destinationUrl}",
+            '(Surat ini dilengkapi dengan QR Code sebagai alat validasi keabsahan dokumen).',
             'Terima kasih.',
-        ];
-
-        return implode("\n", $message);
+        ]);
     }
 
     /**
@@ -121,22 +138,28 @@ class WhatsAppNotificationService
     {
         $studentName = self::getStudentName($record);
         $letterType = self::getLetterTypeName($record);
-        $destinationUrl = self::resolveDestinationUrl();
+        $destinationUrl = self::resolveResubmissionUrl($record);
         $reasonText = filled($rejectionReason) ? $rejectionReason : '-';
 
         return implode("\n", [
-            "Pemberitahuan Status Ajuan - {$letterType}",
-            '',
-            "Halo, *{$studentName}*.",
-            "Mohon maaf, pengajuan *{$letterType}* Anda saat ini *DITOLAK*.",
-            '',
-            "*Catatan Admin:* {$reasonText}",
-            '',
-            'Silakan perbaiki data Anda dan lakukan pengajuan ulang melalui tautan berikut:',
+            "Pemberitahuan Status Ajuan Surat {$letterType}",
+            "Halo, {$studentName}. Mohon maaf, pengajuan {$letterType} Anda saat ini DITOLAK.",
+            "Catatan Admin: {$reasonText}",
+            'Silakan mengajukan ulang melalui tautan berikut:',
             "🔗 {$destinationUrl}",
-            '',
             'Terima kasih.',
         ]);
+    }
+
+    /**
+     * Build the WhatsApp URL for a submission notification to admin.
+     */
+    public static function buildSubmissionUrl(Model $record): ?string
+    {
+        return self::buildWhatsAppUrl(
+            self::getAdminPhoneNumber(),
+            self::buildSubmissionMessage($record),
+        );
     }
 
     /**
@@ -181,6 +204,83 @@ class WhatsAppNotificationService
         }
 
         return (string) config('services.whatsapp.app_url', config('app.url'));
+    }
+
+    private static function resolveResubmissionUrl(Model $record): string
+    {
+        try {
+            $definition = app(DocumentVerificationService::class)->definitionForLetter($record);
+
+            if ($record instanceof RoomUsageRequest) {
+                return route('booking');
+            }
+
+            return route('form', ['letterType' => $definition['letter_type']]);
+        } catch (Throwable) {
+            return self::resolveDestinationUrl();
+        }
+    }
+
+    private static function getAdminPhoneNumber(): ?string
+    {
+        $phone = AdminWhatsappContact::query()->value('whatsapp_number');
+
+        if (! is_string($phone)) {
+            return null;
+        }
+
+        return trim($phone);
+    }
+
+    private static function getStudentNim(Model $record): string
+    {
+        return self::firstFilledAttributeValue($record, [
+            'nim',
+            'student_nim',
+            'mahasiswa_nim',
+        ]) ?? '-';
+    }
+
+    private static function buildRoomSubmissionMessage(RoomUsageRequest $record): string
+    {
+        $studentName = self::getStudentName($record);
+        $nim = self::getStudentNim($record);
+        $roomName = trim((string) ($record->resolved_room_name ?: 'Ruang'));
+        $submittedDate = self::formatRecordDate(now());
+        $bookingDate = self::formatRecordDate($record->start_at);
+        $agenda = trim((string) ($record->activity_name ?? '-'));
+
+        return implode("\n", [
+            "Konfirmasi Pengajuan Peminjaman Ruang {$roomName}",
+            '',
+            'Yth. Admin Fakultas Teknik,',
+            'Saya telah mengisi formulir pengajuan pinjam ruang pada sistem website. Berikut adalah detail data saya:',
+            "Nama: {$studentName}",
+            "NIM: {$nim}",
+            "Ruang: {$roomName}",
+            "Tanggal Pengajuan: {$submittedDate}",
+            "Tanggal Peminjaman: {$bookingDate}",
+            "Agenda: {$agenda}",
+            '',
+            'Mohon kesediaannya untuk memeriksa dan memproses ajuan tersebut. Terima kasih.',
+        ]);
+    }
+
+    private static function formatRecordDate(null|string|CarbonInterface $value): string
+    {
+        if ($value instanceof CarbonInterface) {
+            return $value->locale('id')->translatedFormat('d F Y');
+        }
+
+        if (blank($value)) {
+            return '-';
+        }
+
+        try {
+            return Carbon::parse($value)->locale('id')->translatedFormat('d F Y');
+        } catch (Throwable) {
+            return (string) $value;
+        }
     }
 
     private static function firstFilledAttributeValue(Model $record, array $attributes): ?string

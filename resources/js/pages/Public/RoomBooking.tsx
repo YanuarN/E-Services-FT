@@ -212,6 +212,16 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
                 Permintaan berhasil dikirim
               </p>
               <p className="mt-1 text-sm text-slate-600">{toastMessage}</p>
+              {flash?.whatsappUrl ? (
+                <a
+                  href={flash.whatsappUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-3 inline-flex items-center rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
+                >
+                  Lanjutkan ke WhatsApp Admin
+                </a>
+              ) : null}
             </div>
             <button
               type="button"
@@ -449,8 +459,8 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
                     peminjam ruangan tersebut.
                   </li>
                   <li>
-                    Tanggal yang sudah lewat hanya bisa dilihat sebagai
-                    riwayat, tidak bisa diajukan booking baru.
+                    Tanggal yang sudah lewat hanya bisa dilihat sebagai riwayat,
+                    tidak bisa diajukan booking baru.
                   </li>
                   <li>
                     Tekan tombol Pinjam Tempat untuk membuka form pengajuan di
@@ -474,10 +484,10 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
                   {isRoomBookingsLoading
                     ? 'Memuat jadwal ruangan terpilih...'
                     : isRoomSelected
-                    ? isPastSelectedDate
-                      ? `${selectedDayEvents.length} booking ditemukan pada tanggal lampau. Mode lihat saja aktif.`
-                      : `${selectedDayEvents.length} booking ditemukan pada tanggal terpilih.`
-                    : 'Tentukan ruangan untuk mulai melihat ketersediaan.'}
+                      ? isPastSelectedDate
+                        ? `${selectedDayEvents.length} booking ditemukan pada tanggal lampau. Mode lihat saja aktif.`
+                        : `${selectedDayEvents.length} booking ditemukan pada tanggal terpilih.`
+                      : 'Tentukan ruangan untuk mulai melihat ketersediaan.'}
                 </p>
               </div>
             </div>

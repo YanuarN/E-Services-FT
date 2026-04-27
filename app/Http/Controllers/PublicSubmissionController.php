@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Room;
 use App\Models\RoomUsageRequest;
 use App\Services\Letters\DocumentVerificationService;
+use App\Services\WhatsAppNotificationService;
 use App\Support\PublicServiceCatalog;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -26,10 +27,11 @@ class PublicSubmissionController extends Controller
         abort_if(! $definition, 404);
 
         $modelClass = $definition['model'];
-        $modelClass::query()->create($this->buildLetterPayload($letterType, $validated));
+        $record = $modelClass::query()->create($this->buildLetterPayload($letterType, $validated));
 
         return to_route('form', ['letterType' => $letterType])
-            ->with('success', 'Pengajuan surat berhasil dikirim. Seluruh proses dan hasil surat akan diinformasikan melalui WhatsApp.');
+            ->with('success', 'Pengajuan surat berhasil dikirim. Seluruh proses dan hasil surat akan diinformasikan melalui WhatsApp.')
+            ->with('whatsappUrl', WhatsAppNotificationService::buildSubmissionUrl($record));
     }
 
     public function storeRoomBooking(Request $request): RedirectResponse
@@ -79,7 +81,7 @@ class PublicSubmissionController extends Controller
 
         $documentPath = Storage::disk('local')->putFile('room-usage-requests', $request->file('document'));
 
-        RoomUsageRequest::query()->create([
+        $record = RoomUsageRequest::query()->create([
             'student_name' => $validated['student_name'],
             'nim' => $validated['nim'],
             'study_program' => $validated['study_program'],
@@ -96,7 +98,8 @@ class PublicSubmissionController extends Controller
         ]);
 
         return to_route('booking')
-            ->with('success', 'Pengajuan booking ruangan berhasil dikirim. Informasi lanjutan akan dikirim melalui WhatsApp.');
+            ->with('success', 'Pengajuan booking ruangan berhasil dikirim. Informasi lanjutan akan dikirim melalui WhatsApp.')
+            ->with('whatsappUrl', WhatsAppNotificationService::buildSubmissionUrl($record));
     }
 
     public function roomBookings(Room $room): JsonResponse
