@@ -116,6 +116,8 @@ Jika ingin sekaligus mengisi data awal seperti akun admin dan data ruangan, jala
 php artisan db:seed
 ```
 
+Seeder bawaan juga akan mengisi konfigurasi awal nomor WhatsApp admin pada record `id = 1`.
+
 Seeder bawaan akan membuat akun berikut:
 
 - Super Admin
@@ -124,6 +126,51 @@ Seeder bawaan akan membuat akun berikut:
 - Admin Fakultas
   - Email: `adminfakultas@eservices.test`
   - Password: `password`
+
+## Setup Praktis Nomor WA Admin
+
+Konfigurasi nomor WA admin disimpan pada tabel `admin_whatsapp_contacts` dan hanya memakai satu record tetap dengan `id = 1`.
+
+### Opsi 1: Pakai Seeder
+
+Untuk mengisi nomor awal dengan cepat:
+
+```bash
+php artisan db:seed --class=AdminWhatsappContactSeeder
+```
+
+Seeder ini akan mengisi nomor default:
+
+- `081234567890`
+
+Jika ingin mengganti nomor default, ubah file [database/seeders/AdminWhatsappContactSeeder.php](/mnt/e/Kerjaan/Side%20Hustle/E-Services-FT/database/seeders/AdminWhatsappContactSeeder.php:1) lalu jalankan seeder lagi.
+
+### Opsi 2: Inject Langsung ke Database
+
+Untuk SQLite:
+
+```bash
+sqlite3 database/database.sqlite "UPDATE admin_whatsapp_contacts SET whatsapp_number = '081234567890', updated_at = CURRENT_TIMESTAMP WHERE id = 1;"
+```
+
+Untuk MySQL/MariaDB:
+
+```sql
+UPDATE admin_whatsapp_contacts
+SET whatsapp_number = '081234567890',
+    updated_at = NOW()
+WHERE id = 1;
+```
+
+Jika record `id = 1` belum ada, gunakan:
+
+```sql
+INSERT INTO admin_whatsapp_contacts (id, whatsapp_number, created_at, updated_at)
+VALUES (1, '081234567890', NOW(), NOW())
+ON DUPLICATE KEY UPDATE
+    whatsapp_number = VALUES(whatsapp_number),
+    updated_at = VALUES(updated_at);
+```
 
 ## Cara Menjalankan Project
 
