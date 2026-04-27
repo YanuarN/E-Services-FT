@@ -64,7 +64,7 @@ export default function DocumentVerification({
 
   return (
     <>
-      <Head title="Verifikasi Dokumen" />
+      <Head title={`${title} | Verifikasi Dokumen`} />
 
       <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(14,116,144,0.18),_transparent_38%),linear-gradient(180deg,_#f8fafc_0%,_#ecfeff_100%)] px-4 py-10 text-slate-900 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl">
