@@ -23,6 +23,7 @@ Placeholder ini tersedia di semua surat:
 - `${nomor_surat}`
 - `${no_surat}`
 - `${tanggal_surat}`
+- `${tanggal_hijriah}`
 - `${tanggal}`
 - `${hari}`
 - `${bulan}`

@@ -5,6 +5,8 @@ namespace App\Services\Letters;
 use App\Models\LetterTemplate;
 use App\Services\QrCodeService;
 use Carbon\CarbonInterface;
+use IntlCalendar;
+use IntlDateFormatter;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
@@ -83,6 +85,7 @@ abstract class UniversalLetterService
     protected function baseLetterPayload(Model $letter): array
     {
         $letterDate = $this->resolveDate($letter->getAttribute('letter_date')) ?? now();
+        $hijriLetterDate = $this->formatHijriDate($letterDate);
         $publicToken = app(DocumentVerificationService::class)->ensurePublicToken($letter);
 
         return [
@@ -91,6 +94,7 @@ abstract class UniversalLetterService
             'nomor_permohonan' => (string) ($letter->getAttribute('letter_number') ?? ''),
             'tanggal_surat' => $this->formatDate($letterDate),
             'tanggal' => $this->formatDate($letterDate),
+            'tanggal_hijriah' => $hijriLetterDate,
             'hari' => $letterDate->locale('id')->translatedFormat('l'),
             'bulan' => $letterDate->locale('id')->translatedFormat('F'),
             'tahun' => (string) $letterDate->year,
@@ -132,6 +136,39 @@ abstract class UniversalLetterService
         $date = $this->resolveDate($value);
 
         return $date?->format($format) ?? '';
+    }
+
+    protected function formatHijriDate(null|string|CarbonInterface $value, string $pattern = 'd MMMM y G'): string
+    {
+        $date = $this->resolveDate($value);
+
+        if (! $date || ! class_exists(IntlCalendar::class) || ! class_exists(IntlDateFormatter::class)) {
+            return '';
+        }
+
+        $calendar = IntlCalendar::createInstance(
+            $date->getTimezone()->getName(),
+            'id_ID@calendar=islamic'
+        );
+
+        if (! $calendar) {
+            return '';
+        }
+
+        $calendar->setTime($date->valueOf());
+
+        $formatter = new IntlDateFormatter(
+            'id_ID@calendar=islamic',
+            IntlDateFormatter::NONE,
+            IntlDateFormatter::NONE,
+            $date->getTimezone()->getName(),
+            $calendar,
+            $pattern,
+        );
+
+        $formattedDate = $formatter->format($calendar);
+
+        return is_string($formattedDate) ? $formattedDate : '';
     }
 
     protected function normalizePeople(array $people): array

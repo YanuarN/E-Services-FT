@@ -27,7 +27,7 @@ class LetterTemplateForm
                     ->columns(1),
 
                 Section::make('Dokumen Template')
-                    ->description('Upload file template DOCX yang akan diproses menjadi surat PDF. Gunakan placeholder ${qr_code} untuk QR verifikasi dan ${verification_url} jika ingin menampilkan tautannya sebagai teks.')
+                    ->description('Upload file template DOCX yang akan diproses menjadi surat PDF.')
                     ->schema([
                         FileUpload::make('document_path')
                             ->label('File Template')
@@ -39,10 +39,10 @@ class LetterTemplateForm
                                 'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                             ])
                             ->rules(['file', 'extensions:docx'])
-                            ->helperText('Gunakan file dengan ekstensi .docx (bukan .doc/.docs).')
+                            ->helperText('Gunakan file .docx (bukan .doc/.docs).')
                             ->directory('letter-templates')
                             ->visibility('private')
-                            ->maxSize(10240), // 10 MB
+                            ->maxSize(2048), // 2 MB
                     ]),
             ]);
     }
