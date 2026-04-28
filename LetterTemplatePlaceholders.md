@@ -63,9 +63,52 @@ Kode template: `exam_permission`
 
 - `${nama_mahasiswa}`
 - `${nim}`
+- `${nama_perusahaan}`
+- `${alamat_perusahaan}`
+- `${anggota_kelompok}`
 - `${ujian}`
 - `${semester}`
 - `${tanggal_ujian}`
+
+### Placeholder tabel anggota
+
+Buat satu baris tabel DOCX yang berisi salah satu anchor berikut:
+
+- `${anggota_no}`
+- `${mahasiswa_no}`
+- `${m_no}`
+- `${m_nama}`
+- `${m_nim}`
+- `${m_prodi}`
+- `${anggota_nomor_telepon}`
+- `${anggota_no_hp}`
+- `${mahasiswa_nomor_telepon}`
+- `${mahasiswa_no_hp}`
+- `${m_nomor_telepon}`
+- `${m_no_hp}`
+
+Field yang bisa dipakai dalam satu baris tabel:
+
+- `${anggota_no}`
+- `${mahasiswa_no}`
+- `${m_no}`
+- `${nama_mahasiswa}`
+- `${m_nama}`
+- `${anggota_nim}`
+- `${mahasiswa_nim}`
+- `${nim}`
+- `${m_nim}`
+- `${anggota_prodi}`
+- `${mahasiswa_prodi}`
+- `${program_studi}`
+- `${prodi}`
+- `${m_prodi}`
+- `${anggota_nomor_telepon}`
+- `${anggota_no_hp}`
+- `${mahasiswa_nomor_telepon}`
+- `${mahasiswa_no_hp}`
+- `${m_nomor_telepon}`
+- `${m_no_hp}`
 
 ## 2. Surat Permohonan Praktek Kerja Nyata
 
@@ -94,6 +137,12 @@ Buat satu baris tabel DOCX yang berisi salah satu anchor berikut:
 - `${m_nama}`
 - `${m_nim}`
 - `${m_prodi}`
+- `${anggota_nomor_telepon}`
+- `${anggota_no_hp}`
+- `${mahasiswa_nomor_telepon}`
+- `${mahasiswa_no_hp}`
+- `${m_nomor_telepon}`
+- `${m_no_hp}`
 
 Field yang bisa dipakai dalam satu baris tabel:
 
@@ -111,6 +160,12 @@ Field yang bisa dipakai dalam satu baris tabel:
 - `${program_studi}`
 - `${prodi}`
 - `${m_prodi}`
+- `${anggota_nomor_telepon}`
+- `${anggota_no_hp}`
+- `${mahasiswa_nomor_telepon}`
+- `${mahasiswa_no_hp}`
+- `${m_nomor_telepon}`
+- `${m_no_hp}`
 
 ## 3. Surat Rekomendasi Magang Mandiri
 
@@ -151,6 +206,12 @@ Buat satu baris tabel DOCX yang berisi salah satu anchor berikut:
 - `${m_nama}`
 - `${m_nim}`
 - `${m_prodi}`
+- `${anggota_nomor_telepon}`
+- `${anggota_no_hp}`
+- `${mahasiswa_nomor_telepon}`
+- `${mahasiswa_no_hp}`
+- `${m_nomor_telepon}`
+- `${m_no_hp}`
 
 Field yang bisa dipakai dalam satu baris tabel:
 
@@ -168,6 +229,12 @@ Field yang bisa dipakai dalam satu baris tabel:
 - `${program_studi}`
 - `${prodi}`
 - `${m_prodi}`
+- `${anggota_nomor_telepon}`
+- `${anggota_no_hp}`
+- `${mahasiswa_nomor_telepon}`
+- `${mahasiswa_no_hp}`
+- `${m_nomor_telepon}`
+- `${m_no_hp}`
 
 ## 5. Surat Tugas Mahasiswa Individual
 
@@ -232,6 +299,52 @@ Kode template: `research_permission`
 - `${no_hp}`
 - `${nama_instansi}`
 - `${alamat_instansi}`
+- `${anggota_kelompok}`
+
+Catatan:
+
+- `${nomor_telepon}` dan `${no_hp}` diisi dari input FE `Nomor WhatsApp Aktif`
+- `${anggota_kelompok}` adalah ringkasan teks seluruh anggota kelompok
+
+### Placeholder tabel anggota
+
+Buat satu baris pertama tabel DOCX yang berisi salah satu anchor berikut. Sistem akan clone row tersebut untuk seluruh data anggota:
+
+- `${anggota_no}`
+- `${mahasiswa_no}`
+- `${m_no}`
+- `${m_nama}`
+- `${m_nim}`
+- `${m_prodi}`
+- `${anggota_nomor_telepon}`
+- `${anggota_no_hp}`
+- `${mahasiswa_nomor_telepon}`
+- `${mahasiswa_no_hp}`
+- `${m_nomor_telepon}`
+- `${m_no_hp}`
+
+Field yang bisa dipakai dalam satu baris tabel:
+
+- `${anggota_no}`
+- `${mahasiswa_no}`
+- `${m_no}`
+- `${nama_mahasiswa}`
+- `${m_nama}`
+- `${anggota_nim}`
+- `${mahasiswa_nim}`
+- `${nim}`
+- `${m_nim}`
+- `${anggota_prodi}`
+- `${mahasiswa_prodi}`
+- `${program_studi}`
+- `${prodi}`
+- `${m_prodi}`
+- `${anggota_nomor_telepon}`
+- `${anggota_no_hp}`
+- `${mahasiswa_nomor_telepon}`
+- `${mahasiswa_no_hp}`
+- `${m_nomor_telepon}`
+- `${m_no_hp}`
 
 ## 9. Formulir Peminjaman Ruangan
 
@@ -297,6 +410,52 @@ Kode template: `testing_permission_request`
 - `${no_hp}`
 - `${nama_instansi}`
 - `${alamat_instansi}`
+- `${anggota_kelompok}`
+
+Catatan:
+
+- `${nomor_telepon}` dan `${no_hp}` diisi dari input FE `Nomor WhatsApp Aktif`
+- `${anggota_kelompok}` adalah ringkasan teks seluruh anggota kelompok
+
+### Placeholder tabel anggota
+
+Buat satu baris pertama tabel DOCX yang berisi salah satu anchor berikut. Sistem akan clone row tersebut untuk seluruh data anggota:
+
+- `${anggota_no}`
+- `${mahasiswa_no}`
+- `${m_no}`
+- `${m_nama}`
+- `${m_nim}`
+- `${m_prodi}`
+- `${anggota_nomor_telepon}`
+- `${anggota_no_hp}`
+- `${mahasiswa_nomor_telepon}`
+- `${mahasiswa_no_hp}`
+- `${m_nomor_telepon}`
+- `${m_no_hp}`
+
+Field yang bisa dipakai dalam satu baris tabel:
+
+- `${anggota_no}`
+- `${mahasiswa_no}`
+- `${m_no}`
+- `${nama_mahasiswa}`
+- `${m_nama}`
+- `${anggota_nim}`
+- `${mahasiswa_nim}`
+- `${nim}`
+- `${m_nim}`
+- `${anggota_prodi}`
+- `${mahasiswa_prodi}`
+- `${program_studi}`
+- `${prodi}`
+- `${m_prodi}`
+- `${anggota_nomor_telepon}`
+- `${anggota_no_hp}`
+- `${mahasiswa_nomor_telepon}`
+- `${mahasiswa_no_hp}`
+- `${m_nomor_telepon}`
+- `${m_no_hp}`
 
 ## Catatan Penggunaan
 

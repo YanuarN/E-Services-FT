@@ -31,6 +31,9 @@ class PublicServiceCatalog
                 'fields' => [
                     ['name' => 'student_name', 'label' => 'Nama Lengkap', 'type' => 'text', 'required' => true, 'placeholder' => 'Sesuai data resmi mahasiswa'],
                     ['name' => 'nim', 'label' => 'NIM', 'type' => 'text', 'required' => true, 'placeholder' => 'Contoh: D100220001'],
+                    ['name' => 'company_name', 'label' => 'Nama Perusahaan', 'type' => 'text', 'required' => true],
+                    ['name' => 'company_address', 'label' => 'Alamat Perusahaan', 'type' => 'textarea', 'required' => true, 'rows' => 3],
+                    ['name' => 'group_member', 'label' => 'Daftar Anggota Kelompok', 'type' => 'textarea', 'required' => true, 'rows' => 4, 'helpText' => 'Isi data mahasiswa yang mengikuti Kerja Praktek. Gunakan tombol tambah anggota untuk lebih dari satu mahasiswa.'],
                     ['name' => 'exam', 'label' => 'Jenis Ujian', 'type' => 'text', 'required' => true, 'placeholder' => 'Contoh: Ujian Pendadaran'],
                     ['name' => 'semester', 'label' => 'Semester', 'type' => 'text', 'required' => true, 'placeholder' => 'Contoh: 8'],
                     ['name' => 'exam_date', 'label' => 'Tanggal Ujian', 'type' => 'date', 'required' => true],
@@ -110,6 +113,7 @@ class PublicServiceCatalog
                     ...self::studentFields(),
                     ['name' => 'company_name', 'label' => 'Instansi Tujuan', 'type' => 'text', 'required' => true],
                     ['name' => 'company_address', 'label' => 'Alamat Instansi', 'type' => 'textarea', 'required' => true, 'rows' => 3],
+                    ['name' => 'group_member', 'label' => 'Daftar Anggota Kelompok', 'type' => 'textarea', 'required' => true, 'rows' => 4, 'helpText' => 'Gunakan tombol tambah anggota untuk lebih dari satu mahasiswa.'],
                 ],
             ],
             [
@@ -130,6 +134,7 @@ class PublicServiceCatalog
                     ...self::studentFields(),
                     ['name' => 'company_name', 'label' => 'Instansi Tujuan', 'type' => 'text', 'required' => true],
                     ['name' => 'company_address', 'label' => 'Alamat Instansi', 'type' => 'textarea', 'required' => true, 'rows' => 3],
+                    ['name' => 'group_member', 'label' => 'Daftar Anggota Kelompok', 'type' => 'textarea', 'required' => true, 'rows' => 4, 'helpText' => 'Gunakan tombol tambah anggota untuk lebih dari satu mahasiswa.'],
                 ],
             ],
         ];

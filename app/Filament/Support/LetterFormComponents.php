@@ -44,8 +44,12 @@ class LetterFormComponents
                 TextInput::make('program_studi')
                     ->label('Program Studi')
                     ->maxLength(255),
+                TextInput::make('nomor_telepon')
+                    ->label('Nomor HP')
+                    ->tel()
+                    ->maxLength(255),
             ])
-            ->columns(3)
+            ->columns(4)
             ->defaultItems(0)
             ->reorderable(false)
             ->columnSpanFull();

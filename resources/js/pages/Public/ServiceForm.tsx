@@ -19,14 +19,23 @@ const createMemberRow = (): MemberFormRow => ({
   name: '',
   nim: '',
   studyProgram: '',
+  phoneNumber: '',
 });
 
 const serializeMemberRows = (rows: MemberFormRow[]): string =>
   rows
+    .filter((row) =>
+      [row.name, row.nim, row.studyProgram, row.phoneNumber].some((value) =>
+        Boolean(value.trim()),
+      ),
+    )
     .map((row) =>
-      [row.name.trim(), row.nim.trim(), row.studyProgram.trim()]
-        .filter(Boolean)
-        .join(' - '),
+      [
+        row.name.trim(),
+        row.nim.trim(),
+        row.studyProgram.trim(),
+        row.phoneNumber.trim(),
+      ].join(' - '),
     )
     .filter(Boolean)
     .join('\n');
@@ -37,7 +46,7 @@ const buildRowsFromValue = (value: string): MemberFormRow[] => {
     .map((line) => line.trim())
     .filter(Boolean)
     .map((line) => {
-      const [name = '', nim = '', studyProgram = ''] = line
+      const [name = '', nim = '', studyProgram = '', phoneNumber = ''] = line
         .split('-')
         .map((part) => part.trim());
 
@@ -46,6 +55,7 @@ const buildRowsFromValue = (value: string): MemberFormRow[] => {
         name,
         nim,
         studyProgram,
+        phoneNumber,
       };
     });
 
@@ -155,10 +165,11 @@ const ServiceForm = ({
                 </button>
               </div>
 
-              <div className="grid gap-3 md:grid-cols-3">
+              <div className="grid gap-3 md:grid-cols-4">
                 <input
                   type="text"
                   value={row.name}
+                  required={field.required && index === 0}
                   placeholder="Nama anggota"
                   onChange={(event) =>
                     handleMemberChange(
@@ -173,6 +184,7 @@ const ServiceForm = ({
                 <input
                   type="text"
                   value={row.nim}
+                  required={field.required && index === 0}
                   placeholder="NIM anggota"
                   onChange={(event) =>
                     handleMemberChange(
@@ -203,6 +215,20 @@ const ServiceForm = ({
                     </option>
                   ))}
                 </select>
+                <input
+                  type="tel"
+                  value={row.phoneNumber}
+                  placeholder="Nomor HP anggota"
+                  onChange={(event) =>
+                    handleMemberChange(
+                      field.name,
+                      row.id,
+                      'phoneNumber',
+                      event.target.value,
+                    )
+                  }
+                  className={commonClassName}
+                />
               </div>
             </div>
           ))}

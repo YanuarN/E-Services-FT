@@ -182,6 +182,7 @@ abstract class UniversalLetterService
                     'name' => $person,
                     'nim' => '',
                     'study_program' => '',
+                    'phone_number' => '',
                 ];
 
                 continue;
@@ -196,6 +197,7 @@ abstract class UniversalLetterService
                 'name' => $this->firstFilledValue($person, ['nama_mahasiswa', 'nama', 'name', 'student_name']) ?? '',
                 'nim' => $this->firstFilledValue($person, ['nim', 'student_nim', 'mahasiswa_nim']) ?? '',
                 'study_program' => $this->firstFilledValue($person, ['program_studi', 'prodi', 'study_program']) ?? '',
+                'phone_number' => $this->firstFilledValue($person, ['nomor_telepon', 'no_hp', 'phone_number', 'phone', 'whatsapp']) ?? '',
             ];
         }
 
@@ -220,8 +222,57 @@ abstract class UniversalLetterService
                 'program_studi' => $person['study_program'],
                 'prodi' => $person['study_program'],
                 'm_prodi' => $person['study_program'],
+                'anggota_nomor_telepon' => $person['phone_number'],
+                'anggota_no_hp' => $person['phone_number'],
+                'mahasiswa_nomor_telepon' => $person['phone_number'],
+                'mahasiswa_no_hp' => $person['phone_number'],
+                'm_nomor_telepon' => $person['phone_number'],
+                'm_no_hp' => $person['phone_number'],
             ];
         }, $people);
+    }
+
+    protected function buildMemberRowCollection(array $people): array
+    {
+        return $this->buildRowCollection(
+            [
+                'anggota_no',
+                'mahasiswa_no',
+                'm_no',
+                'm_nama',
+                'm_nim',
+                'm_prodi',
+                'anggota_nomor_telepon',
+                'anggota_no_hp',
+                'mahasiswa_nomor_telepon',
+                'mahasiswa_no_hp',
+                'm_nomor_telepon',
+                'm_no_hp',
+            ],
+            $this->buildMemberRows($people),
+            [
+                'anggota_no',
+                'mahasiswa_no',
+                'm_no',
+                'nama_mahasiswa',
+                'm_nama',
+                'anggota_nim',
+                'mahasiswa_nim',
+                'nim',
+                'm_nim',
+                'anggota_prodi',
+                'mahasiswa_prodi',
+                'program_studi',
+                'prodi',
+                'm_prodi',
+                'anggota_nomor_telepon',
+                'anggota_no_hp',
+                'mahasiswa_nomor_telepon',
+                'mahasiswa_no_hp',
+                'm_nomor_telepon',
+                'm_no_hp',
+            ],
+        );
     }
 
     protected function buildPeopleSummary(array $people): string
@@ -232,6 +283,7 @@ abstract class UniversalLetterService
                     $person['name'] ?? '',
                     $person['nim'] ?? '',
                     $person['study_program'] ?? '',
+                    $person['phone_number'] ?? '',
                 ], fn (mixed $value): bool => filled($value));
 
                 return implode(' - ', $segments);

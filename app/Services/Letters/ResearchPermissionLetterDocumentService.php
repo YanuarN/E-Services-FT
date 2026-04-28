@@ -20,6 +20,8 @@ class ResearchPermissionLetterDocumentService extends UniversalLetterService
     protected function buildTemplatePayload(Model $letter): array
     {
         /** @var ResearchPermissionLetter $letter */
+        $members = $this->normalizePeople($letter->group_member ?? []);
+
         return array_merge(
             $this->baseLetterPayload($letter),
             $this->studentIdentityPayload(
@@ -31,8 +33,17 @@ class ResearchPermissionLetterDocumentService extends UniversalLetterService
             [
                 'nama_instansi' => $letter->company_name,
                 'alamat_instansi' => $letter->company_address,
+                'anggota_kelompok' => $this->buildPeopleSummary($members),
             ],
         );
+    }
+
+    protected function buildRowCollections(Model $letter): array
+    {
+        /** @var ResearchPermissionLetter $letter */
+        return [
+            $this->buildMemberRowCollection($this->normalizePeople($letter->group_member ?? [])),
+        ];
     }
 
     protected function buildFilenameParts(Model $letter): array
@@ -44,6 +55,8 @@ class ResearchPermissionLetterDocumentService extends UniversalLetterService
     protected function verificationFields(Model $letter): array
     {
         /** @var ResearchPermissionLetter $letter */
+        $members = $this->normalizePeople($letter->group_member ?? []);
+
         return [
             $this->makeVerificationField('Nama Mahasiswa', $letter->student_name),
             $this->makeVerificationField('NIM', $letter->nim),
@@ -51,6 +64,7 @@ class ResearchPermissionLetterDocumentService extends UniversalLetterService
             $this->makeVerificationField('Nomor Telepon', $letter->phone_number),
             $this->makeVerificationField('Nama Instansi', $letter->company_name),
             $this->makeVerificationField('Alamat Instansi', $letter->company_address),
+            $this->makeVerificationField('Anggota Kelompok', $this->buildPeopleSummary($members)),
         ];
     }
 }

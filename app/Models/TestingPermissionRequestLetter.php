@@ -17,6 +17,7 @@ class TestingPermissionRequestLetter extends Model
         'phone_number',
         'company_name',
         'company_address',
+        'group_member',
         'letter_date',
         'letter_number',
         'pdf_path',
@@ -24,6 +25,7 @@ class TestingPermissionRequestLetter extends Model
     ];
 
     protected $casts = [
+        'group_member' => 'array',
         'letter_date' => 'date',
     ];
 }

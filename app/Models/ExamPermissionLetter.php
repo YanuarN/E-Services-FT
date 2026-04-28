@@ -13,6 +13,9 @@ class ExamPermissionLetter extends Model
         'status',
         'name',
         'nim',
+        'company_name',
+        'company_address',
+        'group_member',
         'exam',
         'semester',
         'date',
@@ -23,6 +26,7 @@ class ExamPermissionLetter extends Model
     ];
 
     protected $casts = [
+        'group_member' => 'array',
         'date' => 'date',
         'letter_date' => 'date',
     ];

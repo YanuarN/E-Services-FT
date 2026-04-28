@@ -24,6 +24,10 @@ class ExamPermissionLettersTable
                     ->label('NIM')
                     ->searchable()
                     ->sortable(),
+                TextColumn::make('company_name')
+                    ->label('Perusahaan')
+                    ->searchable()
+                    ->wrap(),
                 TextColumn::make('exam')
                     ->label('Jenis Ujian')
                     ->searchable()

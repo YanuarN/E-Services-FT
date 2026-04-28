@@ -154,6 +154,9 @@ class PublicSubmissionController extends Controller
             'exam_permission' => [
                 'student_name' => ['required', 'string', 'max:255'],
                 'nim' => ['required', 'string', 'max:255'],
+                'company_name' => ['required', 'string', 'max:255'],
+                'company_address' => ['required', 'string'],
+                'group_member' => ['required', 'string'],
                 'exam' => ['required', 'string', 'max:255'],
                 'semester' => ['required', 'string', 'max:255'],
                 'exam_date' => ['required', 'date'],
@@ -189,10 +192,16 @@ class PublicSubmissionController extends Controller
                 ...$common,
                 'event_name' => ['required', 'string', 'max:255'],
             ],
-            'research_data_request', 'research_permission', 'testing_permission_request' => [
+            'research_data_request' => [
                 ...$common,
                 'company_name' => ['required', 'string', 'max:255'],
                 'company_address' => ['required', 'string'],
+            ],
+            'research_permission', 'testing_permission_request' => [
+                ...$common,
+                'company_name' => ['required', 'string', 'max:255'],
+                'company_address' => ['required', 'string'],
+                'group_member' => ['required', 'string'],
             ],
             'scholarships_statement' => [
                 ...$common,
@@ -214,6 +223,9 @@ class PublicSubmissionController extends Controller
                 'status' => 'SUBMITTED',
                 'name' => $validated['student_name'],
                 'nim' => $validated['nim'],
+                'company_name' => $validated['company_name'],
+                'company_address' => $validated['company_address'],
+                'group_member' => $this->memberLinesToArray($validated['group_member']),
                 'exam' => $validated['exam'],
                 'semester' => $validated['semester'],
                 'date' => $validated['exam_date'],
@@ -226,7 +238,7 @@ class PublicSubmissionController extends Controller
                 'phone_number' => $validated['phone_number'],
                 'company_name' => $validated['company_name'],
                 'company_address' => $validated['company_address'],
-                'group_member' => $this->linesToArray($validated['group_member']),
+                'group_member' => $this->memberLinesToArray($validated['group_member']),
             ],
             'internship_recommendation' => [
                 'status' => 'SUBMITTED',
@@ -243,7 +255,7 @@ class PublicSubmissionController extends Controller
                 'date' => $validated['activity_date'],
                 'time' => $validated['activity_time'],
                 'place' => $validated['place'],
-                'student_list' => $this->linesToArray($validated['student_list']),
+                'student_list' => $this->memberLinesToArray($validated['student_list']),
             ],
             'letter_of_assignment_individual' => [
                 'status' => 'SUBMITTED',
@@ -263,7 +275,7 @@ class PublicSubmissionController extends Controller
                 'phone_number' => $validated['phone_number'],
                 'event_name' => $validated['event_name'],
             ],
-            'research_data_request', 'research_permission', 'testing_permission_request' => [
+            'research_data_request' => [
                 'status' => 'SUBMITTED',
                 'student_name' => $validated['student_name'],
                 'nim' => $validated['nim'],
@@ -271,6 +283,16 @@ class PublicSubmissionController extends Controller
                 'phone_number' => $validated['phone_number'],
                 'company_name' => $validated['company_name'],
                 'company_address' => $validated['company_address'],
+            ],
+            'research_permission', 'testing_permission_request' => [
+                'status' => 'SUBMITTED',
+                'student_name' => $validated['student_name'],
+                'nim' => $validated['nim'],
+                'study_program' => $validated['study_program'],
+                'phone_number' => $validated['phone_number'],
+                'company_name' => $validated['company_name'],
+                'company_address' => $validated['company_address'],
+                'group_member' => $this->memberLinesToArray($validated['group_member']),
             ],
             'scholarships_statement' => [
                 'status' => 'SUBMITTED',
@@ -293,6 +315,31 @@ class PublicSubmissionController extends Controller
         return Collection::make(preg_split('/\r\n|\n|\r/', $value))
             ->map(fn ($line) => trim((string) $line))
             ->filter()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return array<int, array{nama: string, nim: string, program_studi: string, nomor_telepon: string}>
+     */
+    private function memberLinesToArray(string $value): array
+    {
+        return Collection::make($this->linesToArray($value))
+            ->map(function (string $line): array {
+                [$name, $nim, $studyProgram, $phoneNumber] = array_pad(
+                    array_map('trim', explode('-', $line, 4)),
+                    4,
+                    '',
+                );
+
+                return [
+                    'nama' => $name,
+                    'nim' => $nim,
+                    'program_studi' => $studyProgram,
+                    'nomor_telepon' => $phoneNumber,
+                ];
+            })
+            ->filter(fn (array $member): bool => filled($member['nama']) || filled($member['nim']))
             ->values()
             ->all();
     }

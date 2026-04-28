@@ -38,4 +38,5 @@ export type MemberFormRow = {
   name: string;
   nim: string;
   studyProgram: string;
+  phoneNumber: string;
 };

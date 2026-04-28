@@ -37,6 +37,22 @@ class LetterSubmissionSeeder extends Seeder
                 'status' => 'SUBMITTED',
                 'name' => fake('id_ID')->name(),
                 'nim' => $this->fakeNim(),
+                'company_name' => fake()->company(),
+                'company_address' => fake('id_ID')->address(),
+                'group_member' => [
+                    [
+                        'nama' => fake('id_ID')->name(),
+                        'nim' => $this->fakeNim(),
+                        'program_studi' => $this->fakeStudyProgram(),
+                        'nomor_telepon' => $this->fakePhoneNumber(),
+                    ],
+                    [
+                        'nama' => fake('id_ID')->name(),
+                        'nim' => $this->fakeNim(),
+                        'program_studi' => $this->fakeStudyProgram(),
+                        'nomor_telepon' => $this->fakePhoneNumber(),
+                    ],
+                ],
                 'exam' => fake()->randomElement(['Seminar Proposal', 'Seminar Hasil', 'Sidang Skripsi', 'Sidang KP']),
                 'semester' => (string) fake()->numberBetween(5, 14),
                 'date' => fake()->dateTimeBetween('+3 days', '+30 days')->format('Y-m-d'),
@@ -63,11 +79,13 @@ class LetterSubmissionSeeder extends Seeder
                         'nama' => fake('id_ID')->name(),
                         'nim' => $this->fakeNim(),
                         'prodi' => $this->fakeStudyProgram(),
+                        'nomor_telepon' => $this->fakePhoneNumber(),
                     ],
                     [
                         'nama' => fake('id_ID')->name(),
                         'nim' => $this->fakeNim(),
                         'prodi' => $this->fakeStudyProgram(),
+                        'nomor_telepon' => $this->fakePhoneNumber(),
                     ],
                 ],
                 'letter_number' => null,
@@ -184,6 +202,7 @@ class LetterSubmissionSeeder extends Seeder
                 'phone_number' => $this->fakePhoneNumber(),
                 'company_name' => fake()->company(),
                 'company_address' => fake('id_ID')->address(),
+                'group_member' => $this->fakeGroupMembers(),
                 'letter_number' => null,
                 'letter_date' => null,
                 'pdf_path' => null,
@@ -202,6 +221,7 @@ class LetterSubmissionSeeder extends Seeder
                 'phone_number' => $this->fakePhoneNumber(),
                 'company_name' => fake()->company(),
                 'company_address' => fake('id_ID')->address(),
+                'group_member' => $this->fakeGroupMembers(),
                 'letter_number' => null,
                 'letter_date' => null,
                 'pdf_path' => null,
@@ -253,6 +273,24 @@ class LetterSubmissionSeeder extends Seeder
     private function fakePhoneNumber(): string
     {
         return '08' . fake()->numerify('##########');
+    }
+
+    private function fakeGroupMembers(): array
+    {
+        return [
+            [
+                'nama' => fake('id_ID')->name(),
+                'nim' => $this->fakeNim(),
+                'program_studi' => $this->fakeStudyProgram(),
+                'nomor_telepon' => $this->fakePhoneNumber(),
+            ],
+            [
+                'nama' => fake('id_ID')->name(),
+                'nim' => $this->fakeNim(),
+                'program_studi' => $this->fakeStudyProgram(),
+                'nomor_telepon' => $this->fakePhoneNumber(),
+            ],
+        ];
     }
 
     private function fakeStudyProgram(): string

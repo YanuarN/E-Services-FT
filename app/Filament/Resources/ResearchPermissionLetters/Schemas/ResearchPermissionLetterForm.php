@@ -40,6 +40,7 @@ class ResearchPermissionLetterForm
                             ->required()
                             ->rows(3)
                             ->columnSpanFull(),
+                        LetterFormComponents::memberRepeater('group_member', 'Anggota Kelompok'),
                     ])
                     ->columns(2),
                 LetterFormComponents::managementSection(),

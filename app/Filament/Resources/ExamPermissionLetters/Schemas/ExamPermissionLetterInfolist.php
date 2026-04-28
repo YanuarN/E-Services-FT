@@ -29,6 +29,19 @@ class ExamPermissionLetterInfolist
                             ->label('Tanggal Surat')
                             ->date('d M Y')
                             ->placeholder('-'),
+                        TextEntry::make('name')
+                            ->label('Nama')
+                            ->placeholder('-'),
+                        TextEntry::make('nim')
+                            ->label('NIM')
+                            ->placeholder('-'),
+                        TextEntry::make('company_name')
+                            ->label('Nama Perusahaan')
+                            ->placeholder('-'),
+                        TextEntry::make('company_address')
+                            ->label('Alamat Perusahaan')
+                            ->placeholder('-')
+                            ->columnSpanFull(),
                         TextEntry::make('public_token')
                             ->label('Public Token')
                             ->placeholder('-'),

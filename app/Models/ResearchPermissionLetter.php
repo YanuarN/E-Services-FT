@@ -19,6 +19,7 @@ class ResearchPermissionLetter extends Model
         'phone_number',
         'company_name',
         'company_address',
+        'group_member',
         'public_token',
         'letter_number',
         'letter_date',
@@ -26,6 +27,7 @@ class ResearchPermissionLetter extends Model
     ];
 
     protected $casts = [
+        'group_member' => 'array',
         'letter_date' => 'date',
     ];
 }
