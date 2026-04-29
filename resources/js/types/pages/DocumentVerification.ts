@@ -1,11 +1,14 @@
-export type VerificationField = {
-  label: string;
-  value: string;
-};
-
 export type DocumentVerificationProps = {
   title: string;
   status: string;
-  fields: VerificationField[];
+  letterNumber: string;
+  letterDate: string;
+  subject: string;
+  studentName: string;
+  documentUrl: string | null;
   scannedAt: string;
+  fields?: Array<{
+    label: string;
+    value: string;
+  }>;
 };

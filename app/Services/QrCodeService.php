@@ -22,7 +22,7 @@ class QrCodeService
         $options = new QROptions([
             'outputType' => QROutputInterface::GDIMAGE_PNG,
             'outputBase64' => false,
-            'scale' => 6,
+            'scale' => 4,
             'eccLevel' => QRCode::ECC_M,
             'addQuietzone' => true,
             'quietzoneSize' => 2,

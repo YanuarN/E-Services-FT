@@ -9,6 +9,7 @@ use IntlCalendar;
 use IntlDateFormatter;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use PhpOffice\PhpWord\TemplateProcessor;
@@ -308,15 +309,23 @@ abstract class UniversalLetterService
         return [
             'title' => $this->letterLabel(),
             'status' => (string) ($letter->getAttribute('status') ?? ''),
+            'letterNumber' => $this->normalizePlaceholderValue($letter->getAttribute('letter_number')),
+            'letterDate' => $this->normalizePlaceholderValue(
+                $this->formatDate($letter->getAttribute('letter_date'))
+            ),
+            'subject' => $this->letterLabel(),
+            'studentName' => $this->resolveVerificationStudentName($letter),
+            'documentUrl' => $this->resolveVerificationDocumentUrl($letter),
             'fields' => collect([
                 $this->makeVerificationField('Nomor Surat', $letter->getAttribute('letter_number')),
                 $this->makeVerificationField('Tanggal Surat', $this->formatDate($letter->getAttribute('letter_date'))),
-                $this->makeVerificationField('Token Verifikasi', $letter->getAttribute('public_token')),
-                ...$this->verificationFields($letter),
-            ])
-                ->filter(fn (array $field): bool => filled($field['value']))
-                ->values()
-                ->all(),
+                $this->makeVerificationField('Hal', $this->letterLabel()),
+                $this->makeVerificationField('Nama Mahasiswa', $this->resolveVerificationStudentName($letter)),
+                $this->makeVerificationField(
+                    'Link Surat',
+                    $this->resolveVerificationDocumentUrl($letter) ? 'Tersedia untuk dibuka' : 'Belum tersedia'
+                ),
+            ])->values()->all(),
         ];
     }
 
@@ -331,6 +340,35 @@ abstract class UniversalLetterService
             'label' => $label,
             'value' => $this->normalizePlaceholderValue($value),
         ];
+    }
+
+    protected function resolveVerificationStudentName(Model $letter): string
+    {
+        $name = $this->firstFilledValue(
+            $letter->getAttributes(),
+            ['student_name', 'name']
+        );
+
+        return $this->normalizePlaceholderValue($name);
+    }
+
+    protected function resolveVerificationDocumentUrl(Model $letter): ?string
+    {
+        $pdfPath = (string) ($letter->getAttribute('pdf_path') ?? '');
+        $publicToken = (string) ($letter->getAttribute('public_token') ?? '');
+
+        if ($pdfPath === '' || $publicToken === '') {
+            return null;
+        }
+
+        if (! Route::has('verification.file')) {
+            return null;
+        }
+
+        return route('verification.file', [
+            'letterType' => $this->letterType(),
+            'token' => $publicToken,
+        ]);
     }
 
     private function buildWordDocument(Model $letter, ?LetterTemplate $template = null): string
