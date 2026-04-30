@@ -79,10 +79,14 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
 
     setToastMessage(flash.success);
 
+    if (flash.whatsappUrl) {
+      window.location.assign(flash.whatsappUrl);
+    }
+
     const timeoutId = window.setTimeout(() => setToastMessage(null), 4500);
 
     return () => window.clearTimeout(timeoutId);
-  }, [flash?.success]);
+  }, [flash?.success, flash?.whatsappUrl]);
 
   useEffect(() => {
     if (Object.keys(errors).length > 0) {

@@ -81,6 +81,7 @@ class PublicServiceCatalog
                 'fields' => [
                     ['name' => 'student_name', 'label' => 'Nama Mahasiswa', 'type' => 'text', 'required' => true],
                     ['name' => 'nim', 'label' => 'NIM', 'type' => 'text', 'required' => true],
+                    ['name' => 'phone_number', 'label' => 'Nomor WhatsApp', 'type' => 'text', 'required' => true, 'placeholder' => 'Contoh: 081234567890'],
                     ['name' => 'departement', 'label' => 'Jurusan', 'type' => 'text', 'required' => true],
                     ['name' => 'faculty', 'label' => 'Fakultas', 'type' => 'text', 'required' => true],
                     ['name' => 'assignment', 'label' => 'Penugasan', 'type' => 'textarea', 'required' => true, 'rows' => 3],

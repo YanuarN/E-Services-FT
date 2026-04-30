@@ -73,6 +73,7 @@ class LetterOfAssignmentsTable
             ->recordActions([
                 LetterTableActions::accept(),
                 LetterTableActions::reject(),
+                LetterTableActions::printPdf(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

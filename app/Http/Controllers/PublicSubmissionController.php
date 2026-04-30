@@ -184,6 +184,7 @@ class PublicSubmissionController extends Controller
             'letter_of_assignment_individual' => [
                 'student_name' => ['required', 'string', 'max:255'],
                 'nim' => ['required', 'string', 'max:255'],
+                'phone_number' => ['required', 'string', 'max:255'],
                 'departement' => ['required', 'string', 'max:255'],
                 'faculty' => ['required', 'string', 'max:255'],
                 'assignment' => ['required', 'string'],
@@ -266,6 +267,7 @@ class PublicSubmissionController extends Controller
                 'status' => 'SUBMITTED',
                 'name' => $validated['student_name'],
                 'nim' => $validated['nim'],
+                'phone_number' => $validated['phone_number'],
                 'departement' => $validated['departement'],
                 'faculty' => $validated['faculty'],
                 'assignment' => $validated['assignment'],

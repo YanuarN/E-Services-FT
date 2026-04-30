@@ -5,8 +5,10 @@ namespace App\Filament\Support;
 use App\Models\RoomUsageRequest;
 use App\Services\Letters\DocumentVerificationService;
 use App\Services\Letters\UniversalLetterService;
+use App\Services\WhatsAppNotificationService;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Support\Icons\Heroicon;
@@ -67,9 +69,18 @@ class LetterTableActions
 
                     Notification::make()
                         ->title('Surat berhasil di-accept.')
-                        ->body('PDF surat berhasil dibuat dan disimpan.')
+                        ->body('PDF surat berhasil dibuat dan notifikasi WhatsApp siap dikirim.')
                         ->success()
                         ->send();
+
+                    $url = WhatsAppNotificationService::buildApproveUrl(
+                        $record,
+                        static::verificationUrl($record),
+                    );
+
+                    if ($url) {
+                        return redirect()->away($url);
+                    }
                 } catch (Throwable $exception) {
                     Notification::make()
                         ->title('Gagal generate PDF')
@@ -88,11 +99,17 @@ class LetterTableActions
             ->label('Reject')
             ->icon(Heroicon::OutlinedXCircle)
             ->color('danger')
-            ->requiresConfirmation()
             ->modalHeading('Reject pengajuan surat?')
-            ->modalDescription('Status pengajuan akan diubah menjadi reject.')
+            ->modalDescription('Status pengajuan akan diubah menjadi reject dan notifikasi WhatsApp siap dikirim.')
+            ->schema([
+                Textarea::make('rejection_reason')
+                    ->label('Alasan Penolakan')
+                    ->placeholder('Contoh: Data tidak lengkap atau dokumen pendukung tidak sesuai.')
+                    ->required()
+                    ->maxLength(500),
+            ])
             ->visible(fn (Model $record): bool => static::isPending($record))
-            ->action(function (Model $record) {
+            ->action(function (Model $record, array $data) {
                 try {
                     $record->forceFill([
                         'status' => static::rejectedStatus($record),
@@ -102,6 +119,15 @@ class LetterTableActions
                         ->title('Pengajuan berhasil di-reject.')
                         ->success()
                         ->send();
+
+                    $url = WhatsAppNotificationService::buildRejectUrl(
+                        $record,
+                        (string) ($data['rejection_reason'] ?? ''),
+                    );
+
+                    if ($url) {
+                        return redirect()->away($url);
+                    }
                 } catch (Throwable $exception) {
                     Notification::make()
                         ->title('Gagal reject pengajuan')
@@ -112,6 +138,17 @@ class LetterTableActions
                     return null;
                 }
             });
+    }
+
+    public static function printPdf(): Action
+    {
+        return Action::make('printPdf')
+            ->label('Cetak PDF')
+            ->icon(Heroicon::OutlinedPrinter)
+            ->color('success')
+            ->visible(fn (Model $record): bool => static::canPrintDocument($record))
+            ->url(fn (Model $record): string => static::pdfUrl($record))
+            ->openUrlInNewTab();
     }
 
     private static function resolveService(Model $record): UniversalLetterService
@@ -127,6 +164,14 @@ class LetterTableActions
     private static function isPending(Model $record): bool
     {
         return in_array((string) $record->getAttribute('status'), ['SUBMITTED', 'PENDING'], true);
+    }
+
+    private static function canPrintDocument(Model $record): bool
+    {
+        $status = (string) $record->getAttribute('status');
+
+        return filled($record->getAttribute('pdf_path'))
+            && in_array($status, ['APPROVE', 'APPROVED'], true);
     }
 
     private static function approvedStatus(Model $record): string
@@ -147,5 +192,25 @@ class LetterTableActions
     private static function requiresLetterNumber(Model $record): bool
     {
         return ! static::isRoomUsageStatusSet($record);
+    }
+
+    private static function verificationUrl(Model $record): string
+    {
+        $verificationService = app(DocumentVerificationService::class);
+        $definition = $verificationService->definitionForLetter($record);
+
+        return $verificationService->buildVerificationUrl($definition['letter_type'], $record);
+    }
+
+    private static function pdfUrl(Model $record): string
+    {
+        $verificationService = app(DocumentVerificationService::class);
+        $definition = $verificationService->definitionForLetter($record);
+        $token = $verificationService->ensurePublicToken($record);
+
+        return route('verification.file', [
+            'letterType' => $definition['letter_type'],
+            'token' => $token,
+        ]);
     }
 }

@@ -58,6 +58,7 @@ class InternshipRecommendationLettersTable
             ->recordActions([
                 LetterTableActions::accept(),
                 LetterTableActions::reject(),
+                LetterTableActions::printPdf(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

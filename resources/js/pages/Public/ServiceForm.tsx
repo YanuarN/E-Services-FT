@@ -1,5 +1,5 @@
 import { Link, useForm, usePage } from '@inertiajs/react';
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 
 import AppLayout from '@/components/Layout/AppLayout/AppLayout';
 import type {
@@ -78,6 +78,12 @@ const ServiceForm = ({
   );
 
   const { data, setData, post, processing, errors } = useForm(initialData);
+
+  useEffect(() => {
+    if (flash?.whatsappUrl) {
+      window.location.assign(flash.whatsappUrl);
+    }
+  }, [flash?.whatsappUrl]);
 
   const memberFields = useMemo(
     () => service.fields.filter((field) => isMemberField(field)),

@@ -79,6 +79,7 @@ class RoomUsageRequestsTable
             ->recordActions([
                 LetterTableActions::accept(),
                 LetterTableActions::reject(),
+                LetterTableActions::printPdf(),
                 ViewAction::make(),
                 EditAction::make(),
             ])

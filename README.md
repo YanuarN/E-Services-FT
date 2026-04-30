@@ -118,6 +118,19 @@ php artisan db:seed
 
 Seeder bawaan juga akan mengisi konfigurasi awal nomor WhatsApp admin pada record `id = 1`.
 
+Untuk mengisi data dummy pengajuan surat, jalankan seeder surat secara terpisah karena saat ini belum didaftarkan di `DatabaseSeeder`:
+
+```bash
+php artisan db:seed --class=LetterSubmissionSeeder
+```
+
+Jika ingin reset database lalu isi ulang migrasi dan data surat dummy sekaligus, gunakan:
+
+```bash
+php artisan migrate:fresh --seed
+php artisan db:seed --class=LetterSubmissionSeeder
+```
+
 Seeder bawaan akan membuat akun berikut:
 
 - Super Admin

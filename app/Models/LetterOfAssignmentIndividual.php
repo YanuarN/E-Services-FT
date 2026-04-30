@@ -13,6 +13,7 @@ class LetterOfAssignmentIndividual extends Model
         'status',
         'name',
         'nim',
+        'phone_number',
         'departement',
         'faculty',
         'address',

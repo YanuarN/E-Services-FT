@@ -53,6 +53,15 @@ class WhatsAppNotificationService
             'whatsapp',
             'nomor_telepon',
             'no_hp',
+        ]) ?? self::firstFilledNestedArrayValue($record, [
+            'student_list',
+            'group_member',
+        ], [
+            'nomor_telepon',
+            'phone_number',
+            'phone',
+            'whatsapp',
+            'no_hp',
         ]);
     }
 
@@ -62,6 +71,14 @@ class WhatsAppNotificationService
     public static function getStudentName(Model $record): string
     {
         return self::firstFilledAttributeValue($record, [
+            'student_name',
+            'name',
+            'nama_mahasiswa',
+        ]) ?? self::firstFilledNestedArrayValue($record, [
+            'student_list',
+            'group_member',
+        ], [
+            'nama',
             'student_name',
             'name',
             'nama_mahasiswa',
@@ -238,6 +255,13 @@ class WhatsAppNotificationService
             'nim',
             'student_nim',
             'mahasiswa_nim',
+        ]) ?? self::firstFilledNestedArrayValue($record, [
+            'student_list',
+            'group_member',
+        ], [
+            'nim',
+            'student_nim',
+            'mahasiswa_nim',
         ]) ?? '-';
     }
 
@@ -290,6 +314,33 @@ class WhatsAppNotificationService
 
             if (filled($value)) {
                 return trim((string) $value);
+            }
+        }
+
+        return null;
+    }
+
+    private static function firstFilledNestedArrayValue(Model $record, array $attributes, array $keys): ?string
+    {
+        foreach ($attributes as $attribute) {
+            $items = $record->getAttribute($attribute);
+
+            if (! is_array($items)) {
+                continue;
+            }
+
+            foreach ($items as $item) {
+                if (! is_array($item)) {
+                    continue;
+                }
+
+                foreach ($keys as $key) {
+                    $value = $item[$key] ?? null;
+
+                    if (filled($value)) {
+                        return trim((string) $value);
+                    }
+                }
             }
         }
 
