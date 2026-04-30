@@ -82,11 +82,7 @@ class LetterTableActions
                         return redirect()->away($url);
                     }
                 } catch (Throwable $exception) {
-                    Notification::make()
-                        ->title('Gagal generate PDF')
-                        ->body($exception->getMessage())
-                        ->danger()
-                        ->send();
+                    static::notifyPdfGenerationFailure($record, $exception);
 
                     return null;
                 }
@@ -159,6 +155,62 @@ class LetterTableActions
         $service = app($definition['service']);
 
         return $service;
+    }
+
+    private static function notifyPdfGenerationFailure(Model $record, Throwable $exception): void
+    {
+        $message = trim($exception->getMessage());
+
+        if (static::isTemplateFailure($message)) {
+            Notification::make()
+                ->title('Template surat belum siap')
+                ->body(static::templateFailureMessage($record, $message))
+                ->danger()
+                ->persistent()
+                ->send();
+
+            return;
+        }
+
+        Notification::make()
+            ->title('Gagal generate PDF')
+            ->body($message !== '' ? $message : 'Terjadi kesalahan saat membuat PDF surat.')
+            ->danger()
+            ->persistent()
+            ->send();
+    }
+
+    private static function isTemplateFailure(string $message): bool
+    {
+        $message = strtolower($message);
+
+        return str_contains($message, 'template')
+            && (
+                str_contains($message, 'belum tersedia')
+                || str_contains($message, 'tidak ditemukan')
+                || str_contains($message, 'docx')
+            );
+    }
+
+    private static function templateFailureMessage(Model $record, string $message): string
+    {
+        try {
+            $definition = app(DocumentVerificationService::class)->definitionForLetter($record);
+            $letterType = $definition['letter_type'];
+            $label = app(DocumentVerificationService::class)->letterLabel($letterType);
+        } catch (Throwable) {
+            $label = 'surat ini';
+        }
+
+        if (str_contains(strtolower($message), 'tidak ditemukan')) {
+            return "File template untuk {$label} tidak ditemukan di storage. Upload ulang template DOCX melalui menu Template Surat.";
+        }
+
+        if (str_contains(strtolower($message), 'docx')) {
+            return "Template untuk {$label} harus berupa file DOCX. Upload ulang template yang sesuai melalui menu Template Surat.";
+        }
+
+        return "Template untuk {$label} belum tersedia. Upload template DOCX terlebih dahulu melalui menu Template Surat.";
     }
 
     private static function isPending(Model $record): bool
