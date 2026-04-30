@@ -34,6 +34,14 @@ class LetterOfAssignmentsTable
                     ->label('Tempat')
                     ->searchable()
                     ->wrap(),
+                TextColumn::make('activity')
+                    ->label('Kegiatan')
+                    ->searchable()
+                    ->wrap(),
+                TextColumn::make('assigment')
+                    ->label('Sebagai')
+                    ->searchable()
+                    ->wrap(),
                 TextColumn::make('date')
                     ->label('Tanggal')
                     ->searchable()

@@ -13,6 +13,8 @@ class LetterOfAssignment extends Model
         'status',
         'date',
         'time',
+        'assigment',
+        'activity',
         'place',
         'student_list',
         'letter_number',

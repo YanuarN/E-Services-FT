@@ -61,6 +61,8 @@ Route::post('/form/{letterType}', [PublicSubmissionController::class, 'storeLett
 
 Route::get('/verify/{letterType}/{token}', [DocumentVerificationController::class, 'show'])
     ->name('verification.show');
+Route::get('/verify/{letterType}/{token}/file', [DocumentVerificationController::class, 'download'])
+    ->name('verification.file');
 
 Route::middleware(['auth'])
     ->prefix('admin')
@@ -78,8 +80,8 @@ Route::middleware(['auth'])
             $disk = Storage::disk($diskName);
             abort_unless($disk->exists($record->document_path), 404);
 
-            return $disk->download(
-                $record->document_path,
+            return response()->download(
+                $disk->path($record->document_path),
                 "template-{$record->letter_type}.docx",
             );
         })->name('download');

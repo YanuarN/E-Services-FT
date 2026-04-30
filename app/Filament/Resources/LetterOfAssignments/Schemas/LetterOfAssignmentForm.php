@@ -4,6 +4,7 @@ namespace App\Filament\Resources\LetterOfAssignments\Schemas;
 
 use App\Filament\Support\LetterFormComponents;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
@@ -15,6 +16,16 @@ class LetterOfAssignmentForm
             ->components([
                 Section::make('Data Kegiatan')
                     ->schema([
+                        Textarea::make('activity')
+                            ->label('Kegiatan')
+                            ->required()
+                            ->rows(3)
+                            ->columnSpanFull(),
+                        TextInput::make('assigment')
+                            ->label('Sebagai')
+                            ->placeholder('Contoh: Peserta')
+                            ->maxLength(255)
+                            ->required(),
                         TextInput::make('date')
                             ->label('Tanggal Kegiatan')
                             ->placeholder('Contoh: Rabu-Jumat, 15-17 Oktober 2025')

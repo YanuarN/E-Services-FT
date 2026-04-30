@@ -14,6 +14,21 @@ class LetterOfAssignmentInfolist
             ->components([
                 Section::make('Detail Surat')
                     ->schema([
+                        TextEntry::make('activity')
+                            ->label('Kegiatan')
+                            ->placeholder('-'),
+                        TextEntry::make('assigment')
+                            ->label('Sebagai')
+                            ->placeholder('-'),
+                        TextEntry::make('place')
+                            ->label('Tempat')
+                            ->placeholder('-'),
+                        TextEntry::make('date')
+                            ->label('Tanggal Kegiatan')
+                            ->placeholder('-'),
+                        TextEntry::make('time')
+                            ->label('Waktu Kegiatan')
+                            ->placeholder('-'),
                         TextEntry::make('status')
                             ->label('Status')
                             ->badge()

@@ -15,6 +15,8 @@ return new class extends Migration
             $table->id();
             $table->text('date');
             $table->text('time')->nullable();
+            $table->text('assigment');
+            $table->text('activity');
             $table->string('place');
             $table->json('student_list');
             $table->enum('status', ['SUBMITTED', 'APPROVE', 'REJECT'])->default('SUBMITTED');

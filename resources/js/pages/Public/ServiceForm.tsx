@@ -257,6 +257,7 @@ const ServiceForm = ({
       return (
         <textarea
           rows={field.rows ?? 4}
+          required={field.required}
           placeholder={field.placeholder}
           value={data[field.name] ?? ''}
           onChange={(event) => setData(field.name, event.target.value)}
@@ -268,6 +269,7 @@ const ServiceForm = ({
     if (field.type === 'select_study_program') {
       return (
         <select
+          required={field.required}
           value={data[field.name] ?? ''}
           onChange={(event) => setData(field.name, event.target.value)}
           className={commonClassName}
@@ -286,6 +288,7 @@ const ServiceForm = ({
       <input
         type={field.type}
         step={field.step}
+        required={field.required}
         placeholder={field.placeholder}
         value={data[field.name] ?? ''}
         onChange={(event) => setData(field.name, event.target.value)}
@@ -293,6 +296,22 @@ const ServiceForm = ({
       />
     );
   };
+
+  const renderFieldBlock = (field: ServiceField) => (
+    <div key={field.name}>
+      <label className="mb-2 block text-[0.6875rem] font-medium uppercase tracking-wider text-gray-700">
+        {field.label}
+        {field.required ? ' *' : ''}
+      </label>
+      {renderField(field)}
+      {field.helpText ? (
+        <p className="mt-2 text-xs text-gray-500">{field.helpText}</p>
+      ) : null}
+      {errors[field.name] ? (
+        <p className="mt-2 text-xs text-red-600">{errors[field.name]}</p>
+      ) : null}
+    </div>
+  );
 
   return (
     <AppLayout currentPath="/services" pageTitle="Form Pengajuan Surat">
@@ -347,25 +366,7 @@ const ServiceForm = ({
               </p>
 
               <form className="space-y-6" onSubmit={handleSubmit}>
-                {service.fields.map((field) => (
-                  <div key={field.name}>
-                    <label className="mb-2 block text-[0.6875rem] font-medium uppercase tracking-wider text-gray-700">
-                      {field.label}
-                      {field.required ? ' *' : ''}
-                    </label>
-                    {renderField(field)}
-                    {field.helpText ? (
-                      <p className="mt-2 text-xs text-gray-500">
-                        {field.helpText}
-                      </p>
-                    ) : null}
-                    {errors[field.name] ? (
-                      <p className="mt-2 text-xs text-red-600">
-                        {errors[field.name]}
-                      </p>
-                    ) : null}
-                  </div>
-                ))}
+                {service.fields.map((field) => renderFieldBlock(field))}
 
                 <div className="pt-2">
                   <button

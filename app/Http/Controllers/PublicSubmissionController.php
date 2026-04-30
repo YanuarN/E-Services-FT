@@ -176,6 +176,8 @@ class PublicSubmissionController extends Controller
             'letter_of_assignment' => [
                 'activity_date' => ['required', 'string', 'max:255'],
                 'activity_time' => ['required', 'string', 'max:255'],
+                'activity' => ['required', 'string'],
+                'assigment' => ['required', 'string'],
                 'place' => ['required', 'string', 'max:255'],
                 'student_list' => ['nullable', 'string'],
             ],
@@ -255,6 +257,8 @@ class PublicSubmissionController extends Controller
                 'status' => 'SUBMITTED',
                 'date' => $validated['activity_date'],
                 'time' => $validated['activity_time'],
+                'activity' => $validated['activity'],
+                'assigment' => $validated['assigment'],
                 'place' => $validated['place'],
                 'student_list' => $this->memberLinesToArray((string) ($validated['student_list'] ?? '')),
             ],

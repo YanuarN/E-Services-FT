@@ -66,6 +66,8 @@ class PublicServiceCatalog
                 'title' => 'Surat Tugas Mahasiswa (Kolektif/Kelompok)',
                 'description' => 'Surat tugas untuk kegiatan mahasiswa berbentuk kelompok.',
                 'fields' => [
+                    ['name' => 'activity', 'label' => 'Kegiatan', 'type' => 'textarea', 'required' => true, 'rows' => 3, 'placeholder' => 'Contoh: Mengikuti seminar nasional teknik'],
+                    ['name' => 'assigment', 'label' => 'Sebagai', 'type' => 'text', 'required' => true, 'placeholder' => 'Contoh: Peserta'],
                     ['name' => 'activity_date', 'label' => 'Tanggal Kegiatan', 'type' => 'text', 'required' => true, 'placeholder' => 'Contoh: 20 Mei 2026'],
                     ['name' => 'activity_time', 'label' => 'Waktu Kegiatan', 'type' => 'text', 'required' => true, 'placeholder' => 'Contoh: 08.00 - 12.00 WIB'],
                     ['name' => 'place', 'label' => 'Tempat', 'type' => 'text', 'required' => true],
