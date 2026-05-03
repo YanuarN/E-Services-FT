@@ -31,7 +31,7 @@ jobs:
             # Enable maintenance mode to prevent requests during deployment
             php artisan down --retry=30
 
-            git pull origin master
+            git pull origin main
             composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
             npm ci
             npm run build
