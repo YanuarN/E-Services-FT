@@ -7,72 +7,70 @@ export type PublicService = {
 export const LetterServices: PublicService[] = [
   {
     id: 1,
-    title: 'Surat Keterangan Aktif Kuliah',
+    title: 'Surat Izin Untuk Mengikuti Ujian (Khusus Mahasiswa Kerja Praktek)',
     description:
-      'Untuk keperluan beasiswa, asuransi, atau tunjangan orang tua.',
+      'Pengajuan izin mengikuti ujian bagi mahasiswa kerja praktek.',
   },
   {
     id: 2,
-    title: 'Surat Izin Penelitian',
+    title: 'Surat Permohonan Praktek Kerja Nyata (PKN)',
     description:
-      'Permohonan izin pengambilan data untuk tugas akhir atau riset.',
+      'Surat resmi fakultas untuk pengajuan kerja praktek atau magang ke instansi.',
   },
   {
     id: 3,
-    title: 'Surat Pengantar Magang / KP',
+    title: 'Surat Rekomendasi Magang Mandiri',
     description:
-      'Surat resmi fakultas untuk pengajuan Kerja Praktek ke instansi.',
+      'Surat rekomendasi fakultas untuk kebutuhan program magang mandiri.',
   },
   {
     id: 4,
-    title: 'Surat Cuti Akademik',
-    description: 'Prosedur permohonan berhenti studi sementara (cuti kuliah).',
+    title: 'Surat Tugas Mahasiswa (Kolektif/Kelompok)',
+    description: 'Surat tugas untuk kegiatan mahasiswa berbentuk kelompok.',
   },
   {
     id: 5,
-    title: 'Legalisir Dokumen Digital',
-    description:
-      'Permohonan tanda tangan elektronik untuk ijazah atau transkrip.',
+    title: 'Surat Tugas Mahasiswa (Mandiri/Individual)',
+    description: 'Surat tugas untuk kegiatan mahasiswa individual.',
   },
   {
     id: 6,
-    title: 'Surat Bebas Pustaka',
+    title: 'Surat Pengantar Pembuatan Paspor (Mahasiswa)',
     description:
-      'Pernyataan tidak memiliki pinjaman buku di perpustakaan fakultas.',
+      'Surat pengantar untuk kebutuhan pengajuan paspor mahasiswa.',
   },
   {
     id: 7,
-    title: 'Surat Rekomendasi Beasiswa',
+    title: 'Surat Permohonan Data Untuk Penelitian',
     description:
-      'Dikeluarkan oleh pimpinan fakultas untuk mendaftar beasiswa eksternal.',
+      'Surat permohonan pengambilan data penelitian ke instansi terkait.',
   },
   {
     id: 8,
-    title: 'Transkrip Nilai Sementara',
-    description:
-      'Laporan hasil studi yang telah ditempuh hingga semester terakhir.',
+    title: 'Surat Izin Survey Untuk Penelitian',
+    description: 'Surat izin survey atau penelitian untuk instansi tujuan.',
   },
   {
     id: 9,
-    title: 'Perpanjangan Masa Studi',
+    title: 'Surat Keterangan Tidak Menerima Beasiswa Lain',
     description:
-      'Khusus untuk mahasiswa yang mendekati batas maksimal semester.',
+      'Surat keterangan status beasiswa untuk syarat administrasi.',
   },
   {
     id: 10,
-    title: 'Surat Dispensasi Kegiatan',
+    title: 'Surat Permohonan Izin Pengujian Alat Hasil Penelitian',
     description:
-      'Permohonan izin tidak mengikuti perkuliahan karena delegasi lomba.',
+      'Surat permohonan izin pengujian alat penelitian pada instansi tertentu.',
   },
 ];
 
 export const HomeServiceHighlights = {
   letters: LetterServices.slice(0, 4).map((service) => service.title),
   rooms: [
-    'Ruang Seminar G.4.1 (Kapasitas 40)',
-    'Laboratorium Komputer Dasar',
-    'Ruang Rapat Departemen',
-    'Auditorium Mohammad Djazman',
+    'H.4.1 (Kapasitas 60)',
+    'Hall H (Kapasitas 100)',
+    'F.1.2 (Kapasitas 50)',
+    'F.2.4 (Kapasitas 100)',
   ],
 };
 
@@ -100,10 +98,10 @@ export const HomeSteps = [
 ];
 
 export const FeaturedRooms = [
-  'Ruang Seminar (Gedung F)',
-  'Ruang Rapat Dekanat',
-  'Auditorium Moh. Djazman',
-  'GOR Kampus 2 UMS',
+  'H.4.1',
+  'Hall H',
+  'F.1.2',
+  'F.2.4',
 ];
 
 export const BookingSteps = [
