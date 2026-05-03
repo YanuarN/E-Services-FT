@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\ScholarshipsStatementLetters\Pages;
 
+use App\Filament\Support\AdminAccess;
 use App\Filament\Resources\ScholarshipsStatementLetters\ScholarshipsStatementLetterResource;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
@@ -13,7 +14,7 @@ class ViewScholarshipsStatementLetter extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            EditAction::make(),
+            EditAction::make()->visible(fn (): bool => AdminAccess::canMutate()),
         ];
     }
 }

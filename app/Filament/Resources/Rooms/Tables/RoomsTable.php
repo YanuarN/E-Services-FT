@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Rooms\Tables;
 
+use App\Filament\Support\AdminAccess;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -32,12 +33,12 @@ class RoomsTable
             ])
             ->recordActions([
                 ViewAction::make(),
-                EditAction::make(),
+                EditAction::make()->visible(fn (): bool => AdminAccess::canMutate()),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
+                    DeleteBulkAction::make()->visible(fn (): bool => AdminAccess::canMutate()),
+                ])->visible(fn (): bool => AdminAccess::canMutate()),
             ])
             ->defaultSort('name');
     }

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\LetterTemplates;
 
+use App\Filament\Resources\Concerns\RestrictsAdminFakultasMutations;
 use App\Filament\Resources\LetterTemplates\Pages\CreateLetterTemplate;
 use App\Filament\Resources\LetterTemplates\Pages\EditLetterTemplate;
 use App\Filament\Resources\LetterTemplates\Pages\ListLetterTemplates;
@@ -18,6 +19,8 @@ use Filament\Tables\Table;
 
 class LetterTemplateResource extends Resource
 {
+    use RestrictsAdminFakultasMutations;
+
     protected static ?string $model = LetterTemplate::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentDuplicate;

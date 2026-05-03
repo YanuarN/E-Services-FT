@@ -24,7 +24,7 @@ class LetterTableActions
             ->label('Accept')
             ->icon(Heroicon::OutlinedCheckCircle)
             ->color('success')
-            ->visible(fn (Model $record): bool => static::isPending($record))
+            ->visible(fn (Model $record): bool => static::isPending($record) && AdminAccess::canMutate())
             ->modalHeading('Accept dan Generate Surat')
             ->modalDescription(fn (Model $record): string => static::requiresLetterNumber($record)
                 ? 'Isi nomor surat dan tanggal surat. Setelah disimpan, surat akan diproses menjadi approved.'
@@ -48,6 +48,8 @@ class LetterTableActions
                     ->native(false),
             ])))
             ->action(function (Model $record, array $data) {
+                abort_unless(AdminAccess::canMutate(), 403);
+
                 try {
                     $service = static::resolveService($record);
 
@@ -104,8 +106,10 @@ class LetterTableActions
                     ->required()
                     ->maxLength(500),
             ])
-            ->visible(fn (Model $record): bool => static::isPending($record))
+            ->visible(fn (Model $record): bool => static::isPending($record) && AdminAccess::canMutate())
             ->action(function (Model $record, array $data) {
+                abort_unless(AdminAccess::canMutate(), 403);
+
                 try {
                     $record->forceFill([
                         'status' => static::rejectedStatus($record),

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\AdminWhatsappContacts\Tables;
 
+use App\Filament\Support\AdminAccess;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -22,7 +23,7 @@ class AdminWhatsappContactsTable
                     ->sortable(),
             ])
             ->recordActions([
-                EditAction::make(),
+                EditAction::make()->visible(fn (): bool => AdminAccess::canMutate()),
             ])
             ->defaultSort('updated_at', 'desc');
     }

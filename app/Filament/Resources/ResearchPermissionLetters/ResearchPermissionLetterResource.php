@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\ResearchPermissionLetters;
 
+use App\Filament\Resources\Concerns\RestrictsAdminFakultasMutations;
 use App\Filament\Resources\ResearchPermissionLetters\Pages\EditResearchPermissionLetter;
 use App\Filament\Resources\ResearchPermissionLetters\Pages\ListResearchPermissionLetters;
 use App\Filament\Resources\ResearchPermissionLetters\Pages\ViewResearchPermissionLetter;
@@ -17,6 +18,8 @@ use Filament\Tables\Table;
 
 class ResearchPermissionLetterResource extends Resource
 {
+    use RestrictsAdminFakultasMutations;
+
     protected static ?string $model = ResearchPermissionLetter::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;

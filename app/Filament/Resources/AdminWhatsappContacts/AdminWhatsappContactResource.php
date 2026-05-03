@@ -7,6 +7,7 @@ use App\Filament\Resources\AdminWhatsappContacts\Pages\EditAdminWhatsappContact;
 use App\Filament\Resources\AdminWhatsappContacts\Pages\ListAdminWhatsappContacts;
 use App\Filament\Resources\AdminWhatsappContacts\Schemas\AdminWhatsappContactForm;
 use App\Filament\Resources\AdminWhatsappContacts\Tables\AdminWhatsappContactsTable;
+use App\Filament\Support\AdminAccess;
 use App\Models\AdminWhatsappContact;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -49,6 +50,11 @@ class AdminWhatsappContactResource extends Resource
     public static function canCreate(): bool
     {
         return false;
+    }
+
+    public static function canEdit($record): bool
+    {
+        return AdminAccess::canMutate();
     }
 
     public static function canDelete($record): bool

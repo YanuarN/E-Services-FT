@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\ResearchPermissionLetters\Tables;
 
+use App\Filament\Support\AdminAccess;
 use App\Filament\Resources\ResearchPermissionLetters\ResearchPermissionLetterResource;
 use App\Filament\Support\LetterTableActions;
 use Filament\Actions\BulkActionGroup;
@@ -54,7 +55,7 @@ class ResearchPermissionLettersTable
                         'REJECT' => 'REJECT',
                     ]),
             ])
-            ->recordUrl(fn ($record): string => ResearchPermissionLetterResource::getUrl('edit', ['record' => $record]))
+            ->recordUrl(fn ($record): string => ResearchPermissionLetterResource::getUrl('view', ['record' => $record]))
             ->recordActions([
                 LetterTableActions::accept(),
                 LetterTableActions::reject(),
@@ -62,8 +63,8 @@ class ResearchPermissionLettersTable
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
+                    DeleteBulkAction::make()->visible(fn (): bool => AdminAccess::canMutate()),
+                ])->visible(fn (): bool => AdminAccess::canMutate()),
             ])
             ->defaultSort('created_at', 'desc');
     }

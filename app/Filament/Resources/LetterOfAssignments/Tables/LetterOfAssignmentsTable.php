@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\LetterOfAssignments\Tables;
 
+use App\Filament\Support\AdminAccess;
 use App\Filament\Resources\LetterOfAssignments\LetterOfAssignmentResource;
 use App\Filament\Support\LetterTableActions;
 use Filament\Actions\BulkActionGroup;
@@ -69,7 +70,7 @@ class LetterOfAssignmentsTable
                         'REJECT' => 'REJECT',
                     ]),
             ])
-            ->recordUrl(fn ($record): string => LetterOfAssignmentResource::getUrl('edit', ['record' => $record]))
+            ->recordUrl(fn ($record): string => LetterOfAssignmentResource::getUrl('view', ['record' => $record]))
             ->recordActions([
                 LetterTableActions::accept(),
                 LetterTableActions::reject(),
@@ -77,8 +78,8 @@ class LetterOfAssignmentsTable
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
+                    DeleteBulkAction::make()->visible(fn (): bool => AdminAccess::canMutate()),
+                ])->visible(fn (): bool => AdminAccess::canMutate()),
             ])
             ->defaultSort('created_at', 'desc');
     }

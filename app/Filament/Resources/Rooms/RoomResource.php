@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Rooms;
 
+use App\Filament\Resources\Concerns\RestrictsAdminFakultasMutations;
 use App\Filament\Resources\Rooms\Pages\CreateRoom;
 use App\Filament\Resources\Rooms\Pages\EditRoom;
 use App\Filament\Resources\Rooms\Pages\ListRooms;
@@ -18,6 +19,8 @@ use Filament\Tables\Table;
 
 class RoomResource extends Resource
 {
+    use RestrictsAdminFakultasMutations;
+
     protected static ?string $model = Room::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingOffice2;

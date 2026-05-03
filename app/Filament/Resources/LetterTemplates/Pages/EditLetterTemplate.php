@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\LetterTemplates\Pages;
 
+use App\Filament\Support\AdminAccess;
 use App\Filament\Resources\LetterTemplates\LetterTemplateResource;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ViewAction;
@@ -15,7 +16,7 @@ class EditLetterTemplate extends EditRecord
     {
         return [
             ViewAction::make(),
-            DeleteAction::make(),
+            DeleteAction::make()->visible(fn (): bool => AdminAccess::canMutate()),
         ];
     }
 }

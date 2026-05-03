@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\TestingPermissionRequestLetters;
 
+use App\Filament\Resources\Concerns\RestrictsAdminFakultasMutations;
 use App\Filament\Resources\TestingPermissionRequestLetters\Pages\EditTestingPermissionRequestLetter;
 use App\Filament\Resources\TestingPermissionRequestLetters\Pages\ListTestingPermissionRequestLetters;
 use App\Filament\Resources\TestingPermissionRequestLetters\Pages\ViewTestingPermissionRequestLetter;
@@ -17,6 +18,8 @@ use Filament\Tables\Table;
 
 class TestingPermissionRequestLetterResource extends Resource
 {
+    use RestrictsAdminFakultasMutations;
+
     protected static ?string $model = TestingPermissionRequestLetter::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\RoomUsageRequests\Pages;
 
+use App\Filament\Support\AdminAccess;
 use App\Filament\Resources\RoomUsageRequests\RoomUsageRequestResource;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ViewAction;
@@ -15,7 +16,7 @@ class EditRoomUsageRequest extends EditRecord
     {
         return [
             ViewAction::make(),
-            DeleteAction::make(),
+            DeleteAction::make()->visible(fn (): bool => AdminAccess::canMutate()),
         ];
     }
 }

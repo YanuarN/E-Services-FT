@@ -307,7 +307,11 @@ const ServiceForm = ({
     <div key={field.name}>
       <label className="mb-2 block text-[0.6875rem] font-medium uppercase tracking-wider text-gray-700">
         {field.label}
-        {field.required ? ' *' : ''}
+        {field.required ? (
+          <span className="ml-1 text-red-600" aria-hidden="true">
+            *
+          </span>
+        ) : null}
       </label>
       {renderField(field)}
       {field.helpText ? (

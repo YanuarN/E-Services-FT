@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\PassportApplicationLetters;
 
+use App\Filament\Resources\Concerns\RestrictsAdminFakultasMutations;
 use App\Filament\Resources\PassportApplicationLetters\Pages\EditPassportApplicationLetter;
 use App\Filament\Resources\PassportApplicationLetters\Pages\ListPassportApplicationLetters;
 use App\Filament\Resources\PassportApplicationLetters\Pages\ViewPassportApplicationLetter;
@@ -17,6 +18,8 @@ use Filament\Tables\Table;
 
 class PassportApplicationLetterResource extends Resource
 {
+    use RestrictsAdminFakultasMutations;
+
     protected static ?string $model = PassportApplicationLetter::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\InternshipLetters;
 
+use App\Filament\Resources\Concerns\RestrictsAdminFakultasMutations;
 use App\Filament\Resources\InternshipLetters\Pages\EditInternshipLetter;
 use App\Filament\Resources\InternshipLetters\Pages\ListInternshipLetters;
 use App\Filament\Resources\InternshipLetters\Pages\ViewInternshipLetter;
@@ -17,6 +18,8 @@ use Filament\Tables\Table;
 
 class InternshipLetterResource extends Resource
 {
+    use RestrictsAdminFakultasMutations;
+
     protected static ?string $model = InternshipLetter::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;

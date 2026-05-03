@@ -28,6 +28,12 @@ const statusClassMap = {
   REJECTED: 'bg-slate-100 text-slate-700',
 } as const;
 
+const RequiredMark = () => (
+  <span className="ml-1 text-red-600" aria-hidden="true">
+    *
+  </span>
+);
+
 const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
   const [month, setMonth] = useState(startOfMonth(new Date()));
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
@@ -535,6 +541,7 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
                     <div>
                       <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
                         Nama Mahasiswa
+                        <RequiredMark />
                       </label>
                       <input
                         value={data.student_name}
@@ -542,6 +549,7 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
                           setData('student_name', event.target.value)
                         }
                         type="text"
+                        required
                         className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
                       />
                       {errors.student_name ? (
@@ -554,11 +562,13 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
                     <div>
                       <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
                         NIM
+                        <RequiredMark />
                       </label>
                       <input
                         value={data.nim}
                         onChange={(event) => setData('nim', event.target.value)}
                         type="text"
+                        required
                         className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
                       />
                       {errors.nim ? (
@@ -571,12 +581,14 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
                     <div>
                       <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
                         Program Studi
+                        <RequiredMark />
                       </label>
                       <select
                         value={data.study_program}
                         onChange={(event) =>
                           setData('study_program', event.target.value)
                         }
+                        required
                         className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
                       >
                         <option value="">Pilih Program Studi</option>
@@ -596,6 +608,7 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
                     <div>
                       <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
                         Nomor WhatsApp
+                        <RequiredMark />
                       </label>
                       <input
                         value={data.phone_number}
@@ -603,6 +616,7 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
                           setData('phone_number', event.target.value)
                         }
                         type="tel"
+                        required
                         className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
                       />
                       {errors.phone_number ? (
@@ -615,6 +629,7 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
                     <div>
                       <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
                         Unit / Organisasi
+                        <RequiredMark />
                       </label>
                       <input
                         value={data.unit}
@@ -622,6 +637,7 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
                           setData('unit', event.target.value)
                         }
                         type="text"
+                        required
                         className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
                       />
                       {errors.unit ? (
@@ -634,6 +650,7 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
                     <div>
                       <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
                         Jumlah Peserta
+                        <RequiredMark />
                       </label>
                       <input
                         value={data.number_of_participants}
@@ -642,6 +659,7 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
                         }
                         type="number"
                         min={1}
+                        required
                         className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
                       />
                       {errors.number_of_participants ? (
@@ -654,6 +672,7 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
                     <div>
                       <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
                         Jam Mulai
+                        <RequiredMark />
                       </label>
                       <input
                         value={data.start_time}
@@ -661,6 +680,7 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
                           setData('start_time', event.target.value)
                         }
                         type="time"
+                        required
                         className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
                       />
                       {errors.start_time ? (
@@ -673,6 +693,7 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
                     <div>
                       <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
                         Jam Selesai
+                        <RequiredMark />
                       </label>
                       <input
                         value={data.end_time}
@@ -680,6 +701,7 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
                           setData('end_time', event.target.value)
                         }
                         type="time"
+                        required
                         className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
                       />
                       {errors.end_time ? (
@@ -693,6 +715,7 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
                   <div>
                     <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
                       Nama Kegiatan
+                      <RequiredMark />
                     </label>
                     <textarea
                       value={data.activity_name}
@@ -700,6 +723,7 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
                         setData('activity_name', event.target.value)
                       }
                       rows={3}
+                      required
                       className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
                     />
                     {errors.activity_name ? (
@@ -712,6 +736,7 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
                   <div>
                     <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
                       Dokumen Pendukung
+                      <RequiredMark />
                     </label>
                     <input
                       onChange={(event) =>
@@ -719,6 +744,7 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
                       }
                       type="file"
                       accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                      required
                       className="w-full rounded-2xl border border-[var(--public-border)] bg-white px-5 py-3 text-sm file:mr-4 file:rounded-lg file:border-0 file:bg-[var(--public-primary-hover)] file:px-4 file:py-2 file:text-white"
                     />
                     {errors.document ? (

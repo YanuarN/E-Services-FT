@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\InternshipRecommendationLetters\Tables;
 
+use App\Filament\Support\AdminAccess;
 use App\Filament\Resources\InternshipRecommendationLetters\InternshipRecommendationLetterResource;
 use App\Filament\Support\LetterTableActions;
 use Filament\Actions\BulkActionGroup;
@@ -54,7 +55,7 @@ class InternshipRecommendationLettersTable
                         'REJECT' => 'REJECT',
                     ]),
             ])
-            ->recordUrl(fn ($record): string => InternshipRecommendationLetterResource::getUrl('edit', ['record' => $record]))
+            ->recordUrl(fn ($record): string => InternshipRecommendationLetterResource::getUrl('view', ['record' => $record]))
             ->recordActions([
                 LetterTableActions::accept(),
                 LetterTableActions::reject(),
@@ -62,8 +63,8 @@ class InternshipRecommendationLettersTable
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
+                    DeleteBulkAction::make()->visible(fn (): bool => AdminAccess::canMutate()),
+                ])->visible(fn (): bool => AdminAccess::canMutate()),
             ])
             ->defaultSort('created_at', 'desc');
     }

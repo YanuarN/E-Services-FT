@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\ScholarshipsStatementLetters;
 
+use App\Filament\Resources\Concerns\RestrictsAdminFakultasMutations;
 use App\Filament\Resources\ScholarshipsStatementLetters\Pages\EditScholarshipsStatementLetter;
 use App\Filament\Resources\ScholarshipsStatementLetters\Pages\ListScholarshipsStatementLetters;
 use App\Filament\Resources\ScholarshipsStatementLetters\Pages\ViewScholarshipsStatementLetter;
@@ -17,6 +18,8 @@ use Filament\Tables\Table;
 
 class ScholarshipsStatementLetterResource extends Resource
 {
+    use RestrictsAdminFakultasMutations;
+
     protected static ?string $model = ScholarshipsStatementLetter::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;

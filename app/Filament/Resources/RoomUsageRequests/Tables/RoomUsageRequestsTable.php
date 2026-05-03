@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\RoomUsageRequests\Tables;
 
+use App\Filament\Support\AdminAccess;
 use App\Filament\Support\LetterTableActions;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -81,12 +82,12 @@ class RoomUsageRequestsTable
                 LetterTableActions::reject(),
                 LetterTableActions::printPdf(),
                 ViewAction::make(),
-                EditAction::make(),
+                EditAction::make()->visible(fn (): bool => AdminAccess::canMutate()),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
+                    DeleteBulkAction::make()->visible(fn (): bool => AdminAccess::canMutate()),
+                ])->visible(fn (): bool => AdminAccess::canMutate()),
             ])
             ->defaultSort('created_at', 'desc');
     }

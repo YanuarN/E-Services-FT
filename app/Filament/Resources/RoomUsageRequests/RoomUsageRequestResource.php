@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\RoomUsageRequests;
 
+use App\Filament\Resources\Concerns\RestrictsAdminFakultasMutations;
 use App\Filament\Resources\RoomUsageRequests\Pages\CreateRoomUsageRequest;
 use App\Filament\Resources\RoomUsageRequests\Pages\EditRoomUsageRequest;
 use App\Filament\Resources\RoomUsageRequests\Pages\ListRoomUsageRequests;
@@ -18,6 +19,8 @@ use Filament\Tables\Table;
 
 class RoomUsageRequestResource extends Resource
 {
+    use RestrictsAdminFakultasMutations;
+
     protected static ?string $model = RoomUsageRequest::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentList;

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\ExamPermissionLetters;
 
+use App\Filament\Resources\Concerns\RestrictsAdminFakultasMutations;
 use App\Filament\Resources\ExamPermissionLetters\Pages\EditExamPermissionLetter;
 use App\Filament\Resources\ExamPermissionLetters\Pages\ListExamPermissionLetters;
 use App\Filament\Resources\ExamPermissionLetters\Pages\ViewExamPermissionLetter;
@@ -17,6 +18,8 @@ use Filament\Tables\Table;
 
 class ExamPermissionLetterResource extends Resource
 {
+    use RestrictsAdminFakultasMutations;
+
     protected static ?string $model = ExamPermissionLetter::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\LetterTemplates\Tables;
 
+use App\Filament\Support\AdminAccess;
 use App\Models\LetterTemplate;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -38,12 +39,12 @@ class LetterTemplatesTable
             ])
             ->recordActions([
                 ViewAction::make(),
-                EditAction::make(),
+                EditAction::make()->visible(fn (): bool => AdminAccess::canMutate()),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
+                    DeleteBulkAction::make()->visible(fn (): bool => AdminAccess::canMutate()),
+                ])->visible(fn (): bool => AdminAccess::canMutate()),
             ])
             ->defaultSort('created_at', 'desc');
     }

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\ScholarshipsStatementLetters\Tables;
 
+use App\Filament\Support\AdminAccess;
 use App\Filament\Resources\ScholarshipsStatementLetters\ScholarshipsStatementLetterResource;
 use App\Filament\Support\LetterTableActions;
 use Filament\Actions\BulkActionGroup;
@@ -54,7 +55,7 @@ class ScholarshipsStatementLettersTable
                         'REJECT' => 'REJECT',
                     ]),
             ])
-            ->recordUrl(fn ($record): string => ScholarshipsStatementLetterResource::getUrl('edit', ['record' => $record]))
+            ->recordUrl(fn ($record): string => ScholarshipsStatementLetterResource::getUrl('view', ['record' => $record]))
             ->recordActions([
                 LetterTableActions::accept(),
                 LetterTableActions::reject(),
@@ -62,8 +63,8 @@ class ScholarshipsStatementLettersTable
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
+                    DeleteBulkAction::make()->visible(fn (): bool => AdminAccess::canMutate()),
+                ])->visible(fn (): bool => AdminAccess::canMutate()),
             ])
             ->defaultSort('created_at', 'desc');
     }

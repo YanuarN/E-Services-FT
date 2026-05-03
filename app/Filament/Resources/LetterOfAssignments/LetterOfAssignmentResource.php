@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\LetterOfAssignments;
 
+use App\Filament\Resources\Concerns\RestrictsAdminFakultasMutations;
 use App\Filament\Resources\LetterOfAssignments\Pages\EditLetterOfAssignment;
 use App\Filament\Resources\LetterOfAssignments\Pages\ListLetterOfAssignments;
 use App\Filament\Resources\LetterOfAssignments\Pages\ViewLetterOfAssignment;
@@ -17,6 +18,8 @@ use Filament\Tables\Table;
 
 class LetterOfAssignmentResource extends Resource
 {
+    use RestrictsAdminFakultasMutations;
+
     protected static ?string $model = LetterOfAssignment::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;

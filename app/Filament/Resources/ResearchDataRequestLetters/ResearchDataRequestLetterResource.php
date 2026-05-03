@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\ResearchDataRequestLetters;
 
+use App\Filament\Resources\Concerns\RestrictsAdminFakultasMutations;
 use App\Filament\Resources\ResearchDataRequestLetters\Pages\EditResearchDataRequestLetter;
 use App\Filament\Resources\ResearchDataRequestLetters\Pages\ListResearchDataRequestLetters;
 use App\Filament\Resources\ResearchDataRequestLetters\Pages\ViewResearchDataRequestLetter;
@@ -17,6 +18,8 @@ use Filament\Tables\Table;
 
 class ResearchDataRequestLetterResource extends Resource
 {
+    use RestrictsAdminFakultasMutations;
+
     protected static ?string $model = ResearchDataRequestLetter::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;
