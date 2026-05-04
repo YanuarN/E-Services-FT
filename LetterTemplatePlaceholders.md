@@ -191,10 +191,21 @@ Kode template: `letter_of_assignment`
 
 ### Placeholder utama
 
+- `${activity}`
+- `${kegiatan}`
+- `${assigment}`
+- `${sebagai}`
+- `${penugasan}`
 - `${tanggal_kegiatan}`
 - `${waktu}`
 - `${tempat}`
 - `${daftar_mahasiswa}`
+
+Catatan:
+
+- `${activity}` dan `${kegiatan}` diisi dari field kegiatan
+- `${assigment}`, `${sebagai}`, dan `${penugasan}` diisi dari field penugasan/sebagai
+- `${daftar_mahasiswa}` adalah ringkasan teks seluruh mahasiswa dalam kelompok
 
 ### Placeholder tabel mahasiswa
 

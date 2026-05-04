@@ -41,28 +41,8 @@ class LetterOfAssignmentDocumentService extends UniversalLetterService
     protected function buildRowCollections(Model $letter): array
     {
         /** @var LetterOfAssignment $letter */
-        $rows = $this->buildMemberRows($this->normalizePeople($letter->student_list ?? []));
-
         return [
-            $this->buildRowCollection(
-                ['mahasiswa_no', 'anggota_no', 'm_no', 'm_nama', 'm_nim', 'm_prodi'],
-                $rows,
-                [
-                    'mahasiswa_no',
-                    'anggota_no',
-                    'm_no',
-                    'nama_mahasiswa',
-                    'm_nama',
-                    'mahasiswa_nim',
-                    'nim',
-                    'm_nim',
-                    'mahasiswa_prodi',
-                    'anggota_prodi',
-                    'program_studi',
-                    'prodi',
-                    'm_prodi',
-                ],
-            ),
+            $this->buildMemberRowCollection($this->normalizePeople($letter->student_list ?? [])),
         ];
     }
 
