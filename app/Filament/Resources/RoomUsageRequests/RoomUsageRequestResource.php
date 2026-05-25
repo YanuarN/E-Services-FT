@@ -12,6 +12,7 @@ use App\Filament\Resources\RoomUsageRequests\Schemas\RoomUsageRequestInfolist;
 use App\Filament\Resources\RoomUsageRequests\Tables\RoomUsageRequestsTable;
 use App\Models\RoomUsageRequest;
 use BackedEnum;
+use Illuminate\Database\Eloquent\Builder;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -46,6 +47,11 @@ class RoomUsageRequestResource extends Resource
     public static function table(Table $table): Table
     {
         return RoomUsageRequestsTable::configure($table);
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->with(['room', 'slots.room']);
     }
 
     public static function getRelations(): array

@@ -20,4 +20,9 @@ class Room extends Model
     {
         return $this->hasMany(RoomUsageRequest::class);
     }
+
+    public function roomUsageRequestSlots(): HasMany
+    {
+        return $this->hasMany(RoomUsageRequestSlot::class);
+    }
 }

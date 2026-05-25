@@ -4,6 +4,7 @@ namespace App\Filament\Resources\RoomUsageRequests\Schemas;
 
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -56,13 +57,6 @@ class RoomUsageRequestForm
                             ->label('Selesai')
                             ->required()
                             ->seconds(false),
-                        Select::make('room_id')
-                            ->label('Ruang')
-                            ->relationship('room', 'name')
-                            ->required()
-                            ->searchable()
-                            ->preload()
-                            ->helperText('Tambahkan data ruang lebih dulu melalui menu Ruangan bila belum tersedia.'),
                         TextInput::make('number_of_participants')
                             ->label('Jumlah Peserta')
                             ->required()
@@ -79,6 +73,34 @@ class RoomUsageRequestForm
                             ->default('PENDING'),
                     ])
                     ->columns(2),
+
+                Section::make('Slot Ruangan')
+                    ->schema([
+                        Repeater::make('slots')
+                            ->relationship('slots')
+                            ->required()
+                            ->minItems(1)
+                            ->defaultItems(1)
+                            ->reorderable(false)
+                            ->schema([
+                                Select::make('room_id')
+                                    ->label('Ruang')
+                                    ->relationship('room', 'name')
+                                    ->required()
+                                    ->searchable()
+                                    ->preload(),
+                                DateTimePicker::make('start_at')
+                                    ->label('Mulai')
+                                    ->required()
+                                    ->seconds(false),
+                                DateTimePicker::make('end_at')
+                                    ->label('Selesai')
+                                    ->required()
+                                    ->seconds(false),
+                            ])
+                            ->columns(3)
+                            ->columnSpanFull(),
+                    ]),
 
                 Section::make('Dokumen')
                     ->schema([

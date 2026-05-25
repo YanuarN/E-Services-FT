@@ -4,17 +4,18 @@ import type { FormEvent } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 
 import BookingCalendar from '@/components/BookingCalendar/BookingCalendar';
-import InfoCard from '@/components/InfoCard/InfoCard';
 import AppLayout from '@/components/Layout/AppLayout/AppLayout';
 import type { BookingCalendarEvent } from '@/types/Booking';
 import type {
   RoomBookingProps,
   RoomBookingSharedPageProps,
 } from '@/types/pages/Public/RoomBooking';
-import {
-  buildAvailabilityMap,
-  findEventsForDate,
-} from '@/utils/BookingAvailability';
+
+type BookingSlotForm = {
+  room_id: string;
+  start_time: string;
+  end_time: string;
+};
 
 const statusLabelMap = {
   APPROVED: 'Disetujui',
@@ -34,49 +35,56 @@ const RequiredMark = () => (
   </span>
 );
 
+const toMinutes = (time: string): number => {
+  const [hours, minutes] = time.split(':').map(Number);
+
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) {
+    return -1;
+  }
+
+  return hours * 60 + minutes;
+};
+
+const hasOverlap = (
+  startA: string,
+  endA: string,
+  startB: string,
+  endB: string,
+): boolean => {
+  const aStart = toMinutes(startA);
+  const aEnd = toMinutes(endA);
+  const bStart = toMinutes(startB);
+  const bEnd = toMinutes(endB);
+
+  if (aStart < 0 || aEnd < 0 || bStart < 0 || bEnd < 0) {
+    return false;
+  }
+
+  return aStart < bEnd && aEnd > bStart;
+};
+
 const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
   const [month, setMonth] = useState(startOfMonth(new Date()));
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
-  const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false);
-  const [isFormVisible, setIsFormVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [roomBookings, setRoomBookings] = useState<BookingCalendarEvent[]>([]);
-  const [isRoomBookingsLoading, setIsRoomBookingsLoading] = useState(false);
-  const [roomBookingsError, setRoomBookingsError] = useState<string | null>(
-    null,
-  );
+  const [dayBookings, setDayBookings] = useState<BookingCalendarEvent[]>([]);
+  const [isDayBookingsLoading, setIsDayBookingsLoading] = useState(false);
+  const [dayBookingsError, setDayBookingsError] = useState<string | null>(null);
   const { flash } = usePage<RoomBookingSharedPageProps>().props;
 
-  const { data, setData, post, processing, errors, reset, clearErrors } =
-    useForm({
-      student_name: '',
-      nim: '',
-      study_program: '',
-      phone_number: '',
-      unit: '',
-      activity_name: '',
-      room_id: '',
-      number_of_participants: '',
-      selected_date: '',
-      start_time: '',
-      end_time: '',
-      document: null as File | null,
-    });
-
-  const selectedRoom = useMemo(
-    () => rooms.find((room) => String(room.id) === data.room_id),
-    [data.room_id, rooms],
-  );
-  const selectedRoomLabel = selectedRoom?.name ?? '';
-  const isRoomSelected = Boolean(selectedRoom);
-  const availabilityMap = useMemo(
-    () => (isRoomSelected ? buildAvailabilityMap(roomBookings) : {}),
-    [isRoomSelected, roomBookings],
-  );
-  const selectedDayEvents = useMemo(
-    () => (selectedDate ? findEventsForDate(selectedDate, roomBookings) : []),
-    [roomBookings, selectedDate],
-  );
+  const { data, setData, post, processing, errors, reset } = useForm({
+    student_name: '',
+    nim: '',
+    study_program: '',
+    phone_number: '',
+    unit: '',
+    activity_name: '',
+    number_of_participants: '',
+    selected_date: '',
+    booking_slots: [{ room_id: '', start_time: '', end_time: '' }] as BookingSlotForm[],
+    document: null as File | null,
+  });
+  const formErrors = errors as Record<string, string | undefined>;
 
   useEffect(() => {
     if (!flash?.success) {
@@ -95,27 +103,25 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
   }, [flash?.success, flash?.whatsappUrl]);
 
   useEffect(() => {
-    if (Object.keys(errors).length > 0) {
-      setIsFormVisible(true);
-    }
-  }, [errors]);
-
-  useEffect(() => {
-    if (!selectedRoom) {
-      setRoomBookings([]);
-      setRoomBookingsError(null);
-      setIsRoomBookingsLoading(false);
+    if (!selectedDate) {
+      setDayBookings([]);
+      setDayBookingsError(null);
+      setIsDayBookingsLoading(false);
+      setData('selected_date', '');
 
       return;
     }
 
+    const selectedDateValue = format(selectedDate, 'yyyy-MM-dd');
+    setData('selected_date', selectedDateValue);
+
     const controller = new AbortController();
 
-    setIsRoomBookingsLoading(true);
-    setRoomBookingsError(null);
+    setIsDayBookingsLoading(true);
+    setDayBookingsError(null);
 
     window
-      .fetch(`/booking/rooms/${selectedRoom.id}/bookings`, {
+      .fetch(`/booking/bookings?selected_date=${selectedDateValue}`, {
         signal: controller.signal,
         headers: {
           Accept: 'application/json',
@@ -130,66 +136,24 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
           data?: BookingCalendarEvent[];
         };
 
-        setRoomBookings(payload.data ?? []);
+        setDayBookings(payload.data ?? []);
       })
       .catch((error: unknown) => {
         if (error instanceof DOMException && error.name === 'AbortError') {
           return;
         }
 
-        setRoomBookings([]);
-        setRoomBookingsError('Jadwal ruangan belum berhasil dimuat.');
+        setDayBookings([]);
+        setDayBookingsError('Jadwal ruangan belum berhasil dimuat.');
       })
       .finally(() => {
         if (!controller.signal.aborted) {
-          setIsRoomBookingsLoading(false);
+          setIsDayBookingsLoading(false);
         }
       });
 
     return () => controller.abort();
-  }, [selectedRoom]);
-
-  const resetBookingFlow = () => {
-    setSelectedDate(undefined);
-    setIsBookingDialogOpen(false);
-    setIsFormVisible(false);
-    setData('selected_date', '');
-    setData('start_time', '');
-    setData('end_time', '');
-  };
-
-  const handleRoomOptionChange = (value: string) => {
-    resetBookingFlow();
-    clearErrors('room_id', 'selected_date', 'start_time', 'end_time');
-    setData('room_id', value);
-  };
-
-  const handleDateChange = (date: Date | undefined) => {
-    if (!isRoomSelected) {
-      return;
-    }
-
-    setSelectedDate(date);
-    setData('selected_date', date ? format(date, 'yyyy-MM-dd') : '');
-    setIsBookingDialogOpen(Boolean(date));
-    clearErrors('selected_date');
-  };
-
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    post('/booking', {
-      forceFormData: true,
-      onSuccess: () => {
-        reset();
-        setRoomBookings([]);
-        setRoomBookingsError(null);
-        setSelectedDate(undefined);
-        setIsBookingDialogOpen(false);
-        setIsFormVisible(false);
-      },
-    });
-  };
+  }, [selectedDate, setData]);
 
   const selectedDateLabel = selectedDate
     ? format(selectedDate, 'dd MMMM yyyy')
@@ -197,9 +161,111 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
   const isPastSelectedDate = selectedDate
     ? isBefore(startOfDay(selectedDate), startOfDay(new Date()))
     : false;
-  const roomSummary = selectedRoom
-    ? `${selectedRoom.name} · Kapasitas ${selectedRoom.capacity} orang`
-    : selectedRoomLabel || 'Belum memilih ruangan';
+
+  const handleDateChange = (date: Date | undefined) => {
+    setSelectedDate(date);
+  };
+
+  const addSlotRow = () => {
+    setData('booking_slots', [
+      ...data.booking_slots,
+      { room_id: '', start_time: '', end_time: '' },
+    ]);
+  };
+
+  const removeSlotRow = (index: number) => {
+    if (data.booking_slots.length <= 1) {
+      return;
+    }
+
+    setData(
+      'booking_slots',
+      data.booking_slots.filter((_, slotIndex) => slotIndex !== index),
+    );
+  };
+
+  const updateSlotRow = (
+    index: number,
+    field: keyof BookingSlotForm,
+    value: string,
+  ) => {
+    const nextSlots = data.booking_slots.map((slot, slotIndex) => {
+      if (slotIndex !== index) {
+        return slot;
+      }
+
+      return {
+        ...slot,
+        [field]: value,
+      };
+    });
+
+    setData('booking_slots', nextSlots);
+  };
+
+  const localConflicts = useMemo(() => {
+    return data.booking_slots
+      .map((slot, index) => {
+        if (!slot.room_id || !slot.start_time || !slot.end_time) {
+          return null;
+        }
+
+        const matched = dayBookings.find((booking) => {
+          if (String(booking.roomId) !== slot.room_id) {
+            return false;
+          }
+
+          const bookingStart = format(parseISO(booking.start), 'HH:mm');
+          const bookingEnd = format(parseISO(booking.end), 'HH:mm');
+
+          return hasOverlap(
+            slot.start_time,
+            slot.end_time,
+            bookingStart,
+            bookingEnd,
+          );
+        });
+
+        if (!matched) {
+          return null;
+        }
+
+        const roomLabel = rooms.find((room) => String(room.id) === slot.room_id)?.name;
+
+        return {
+          index,
+          roomLabel: roomLabel ?? 'Ruang',
+          startTime: slot.start_time,
+          endTime: slot.end_time,
+        };
+      })
+      .filter(Boolean) as {
+      index: number;
+      roomLabel: string;
+      startTime: string;
+      endTime: string;
+    }[];
+  }, [data.booking_slots, dayBookings, rooms]);
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!selectedDate) {
+      return;
+    }
+
+    if (localConflicts.length > 0) {
+      return;
+    }
+
+    post('/booking', {
+      forceFormData: true,
+      onSuccess: () => {
+        reset();
+        setData('booking_slots', [{ room_id: '', start_time: '', end_time: '' }]);
+      },
+    });
+  };
 
   return (
     <AppLayout currentPath="/booking" pageTitle="Peminjaman Ruang">
@@ -222,16 +288,6 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
                 Permintaan berhasil dikirim
               </p>
               <p className="mt-1 text-sm text-slate-600">{toastMessage}</p>
-              {flash?.whatsappUrl ? (
-                <a
-                  href={flash.whatsappUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-3 inline-flex items-center rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
-                >
-                  Lanjutkan ke WhatsApp Admin
-                </a>
-              ) : null}
             </div>
             <button
               type="button"
@@ -253,252 +309,80 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
         </div>
       ) : null}
 
-      {isBookingDialogOpen && selectedDate ? (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-[rgba(15,23,42,0.42)] px-4 py-6">
-          <div className="w-full max-w-2xl rounded-[28px] bg-white p-6 shadow-[0_26px_80px_rgba(15,23,42,0.24)] sm:p-7">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--public-text-muted)]">
-                  Daftar Booking Ruangan
-                </p>
-                <h2 className="mt-2 text-2xl font-bold tracking-[-0.03em] text-[var(--public-primary-hover)]">
-                  {selectedRoomLabel}
-                </h2>
-                <p className="mt-2 text-sm text-[var(--public-text-muted)]">
-                  {format(selectedDate, 'dd MMMM yyyy')}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsBookingDialogOpen(false)}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--public-border)] text-[var(--public-primary-hover)] transition hover:bg-[var(--public-surface-soft)]"
-                aria-label="Tutup popup booking"
-              >
-                <svg
-                  viewBox="0 0 20 20"
-                  className="h-4 w-4"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                >
-                  <path d="m5 5 10 10M15 5 5 15" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="mt-6 max-h-[46vh] space-y-3 overflow-y-auto pr-1">
-              {isRoomBookingsLoading ? (
-                <div className="rounded-2xl border border-dashed border-[var(--public-border)] bg-[var(--public-surface-soft)] px-4 py-5 text-sm text-[var(--public-text-muted)]">
-                  Jadwal ruangan sedang dimuat...
-                </div>
-              ) : roomBookingsError ? (
-                <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-5 text-sm text-red-700">
-                  {roomBookingsError}
-                </div>
-              ) : selectedDayEvents.length > 0 ? (
-                selectedDayEvents.map((booking) => (
-                  <div
-                    key={booking.id}
-                    className="rounded-2xl border border-[var(--public-border)] bg-[var(--public-surface-soft)] px-4 py-4"
-                  >
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                      <div>
-                        <p className="text-base font-semibold text-[var(--public-primary-hover)]">
-                          {booking.studentName}
-                        </p>
-                        <p className="mt-1 text-sm text-[var(--public-text-muted)]">
-                          {booking.activityName}
-                        </p>
-                        <p className="mt-2 text-sm text-slate-500">
-                          {format(parseISO(booking.start), 'HH:mm')} -{' '}
-                          {format(parseISO(booking.end), 'HH:mm')}
-                          {booking.unit ? ` · ${booking.unit}` : ''}
-                        </p>
-                      </div>
-                      <span
-                        className={`inline-flex w-fit rounded-full px-3 py-1 text-xs font-semibold ${statusClassMap[booking.status]}`}
-                      >
-                        {statusLabelMap[booking.status]}
-                      </span>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="rounded-2xl border border-dashed border-[var(--public-border)] bg-[var(--public-surface-soft)] px-4 py-5 text-sm text-[var(--public-text-muted)]">
-                  Belum ada booking untuk ruangan ini pada tanggal tersebut.
-                  Anda bisa lanjut mengajukan peminjaman.
-                </div>
-              )}
-            </div>
-
-            {isPastSelectedDate ? (
-              <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-800">
-                Tanggal yang sudah terlewat hanya bisa dilihat riwayat
-                booking-nya. Pengajuan booking baru hanya tersedia untuk hari
-                ini dan tanggal setelahnya.
-              </div>
-            ) : null}
-
-            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-              <button
-                type="button"
-                onClick={() => setIsBookingDialogOpen(false)}
-                className="rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm font-semibold text-[var(--public-primary-hover)] transition hover:bg-[var(--public-surface-soft)]"
-              >
-                Tutup
-              </button>
-              <button
-                type="button"
-                disabled={isPastSelectedDate}
-                onClick={() => {
-                  if (isPastSelectedDate) {
-                    return;
-                  }
-
-                  setIsFormVisible(true);
-                  setIsBookingDialogOpen(false);
-                }}
-                className="rounded-2xl bg-[var(--public-accent)] px-5 py-3 text-sm font-semibold text-[var(--public-primary-hover)] shadow-[0_12px_24px_rgba(244,196,48,0.28)] transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
-              >
-                Pinjam Tempat
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
-
       <section className="py-8 sm:py-10">
         <div className="public-container">
           <h1 className="text-4xl font-bold tracking-[-0.05em] text-[var(--public-primary-hover)] sm:text-5xl">
-            Peminjaman Ruang
+            Peminjaman Ruang Multi-Ruangan
           </h1>
-        </div>
-      </section>
-
-      <section className="pb-8">
-        <div className="public-container">
-          <div className="public-card p-6 sm:p-8">
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--public-text-muted)]">
-                  Langkah 1
-                </p>
-                <h2 className="mt-2 text-2xl font-bold tracking-[-0.03em] text-[var(--public-primary-hover)]">
-                  Pilih Ruangan Terlebih Dahulu
-                </h2>
-                <p className="mt-2 max-w-2xl text-sm text-[var(--public-text-muted)]">
-                  Pilih ruangan dari data master yang dikelola admin. Kalender
-                  dan daftar peminjam akan memuat jadwal sesuai ruangan yang
-                  Anda pilih.
-                </p>
-              </div>
-              <div className="rounded-2xl bg-[var(--public-surface-soft)] px-4 py-3 text-sm text-[var(--public-text-muted)]">
-                Jadwal ruangan dimuat langsung dari server saat Anda memilih
-                ruangan.
-              </div>
-            </div>
-
-            <div className="mt-6 grid gap-5 lg:grid-cols-[1.3fr_0.7fr]">
-              <div>
-                <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
-                  Daftar Ruangan
-                </label>
-                <select
-                  value={data.room_id}
-                  onChange={(event) =>
-                    handleRoomOptionChange(event.target.value)
-                  }
-                  className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
-                >
-                  <option value="">Pilih Ruangan</option>
-                  {rooms.map((room) => (
-                    <option key={room.id} value={room.id}>
-                      {room.name} (Kapasitas {room.capacity})
-                    </option>
-                  ))}
-                </select>
-                {errors.room_id ? (
-                  <p className="mt-2 text-xs text-red-600">{errors.room_id}</p>
-                ) : null}
-              </div>
-
-              <div className="rounded-2xl border border-[rgba(31,42,102,0.08)] bg-white px-5 py-4">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--public-text-muted)]">
-                  Ruangan Aktif
-                </p>
-                <p className="mt-2 text-lg font-semibold text-[var(--public-primary-hover)]">
-                  {selectedRoomLabel || 'Belum dipilih'}
-                </p>
-                <p className="mt-1 text-sm text-[var(--public-text-muted)]">
-                  {roomSummary}
-                </p>
-              </div>
-            </div>
-
-            {roomBookingsError ? (
-              <p className="mt-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                {roomBookingsError}
-              </p>
-            ) : null}
-          </div>
         </div>
       </section>
 
       <section className="pb-12">
         <div className="public-container">
-          <div className="grid gap-7 xl:grid-cols-[1.7fr_0.82fr]">
+          <div className="grid gap-7 xl:grid-cols-[1.3fr_1fr]">
             <BookingCalendar
               selectedDate={selectedDate}
               month={month}
               onSelectDate={handleDateChange}
               onMonthChange={setMonth}
-              availabilityMap={availabilityMap}
-              isRoomSelected={isRoomSelected}
-              selectedRoomLabel={selectedRoomLabel}
             />
 
-            <div className="space-y-5">
-              <InfoCard title="Informasi Penting">
-                <ul className="space-y-3 text-[15px] leading-7">
-                  <li>
-                    Pilih ruangan terlebih dahulu, lalu klik tanggal pada
-                    kalender.
-                  </li>
-                  <li>
-                    Setelah tanggal diklik, popup akan menampilkan daftar
-                    peminjam ruangan tersebut.
-                  </li>
-                  <li>
-                    Tanggal yang sudah lewat hanya bisa dilihat sebagai riwayat,
-                    tidak bisa diajukan booking baru.
-                  </li>
-                  <li>
-                    Tekan tombol Pinjam Tempat untuk membuka form pengajuan di
-                    bawah kalender untuk tanggal hari ini atau berikutnya.
-                  </li>
-                </ul>
-              </InfoCard>
+            <div className="public-card p-6">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--public-text-muted)]">
+                Booking Hari Terpilih
+              </p>
+              <p className="mt-2 text-lg font-semibold text-[var(--public-primary-hover)]">
+                {selectedDateLabel}
+              </p>
 
-              <div className="rounded-[24px] border border-[rgba(31,42,102,0.12)] bg-[var(--public-primary-hover)] p-6 text-white shadow-[var(--public-shadow)]">
-                <p className="text-white/56 text-[11px] font-semibold uppercase tracking-[0.22em]">
-                  Ringkasan Pilihan
+              {dayBookingsError ? (
+                <p className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  {dayBookingsError}
                 </p>
-                <p className="mt-2 text-[1.4rem] font-bold tracking-[-0.04em] text-white">
-                  {selectedRoomLabel || 'Belum memilih ruangan'}
-                </p>
-                <p className="mt-2 text-sm text-white/80">
-                  {selectedDateLabel}
-                </p>
-                <div className="mt-5 h-px bg-white/20" />
-                <p className="mt-5 text-sm text-white/80">
-                  {isRoomBookingsLoading
-                    ? 'Memuat jadwal ruangan terpilih...'
-                    : isRoomSelected
-                      ? isPastSelectedDate
-                        ? `${selectedDayEvents.length} booking ditemukan pada tanggal lampau. Mode lihat saja aktif.`
-                        : `${selectedDayEvents.length} booking ditemukan pada tanggal terpilih.`
-                      : 'Tentukan ruangan untuk mulai melihat ketersediaan.'}
-                </p>
+              ) : null}
+
+              <div className="mt-5 space-y-3">
+                {!selectedDate ? (
+                  <div className="rounded-2xl border border-dashed border-[var(--public-border)] bg-[var(--public-surface-soft)] px-4 py-5 text-sm text-[var(--public-text-muted)]">
+                    Klik tanggal pada kalender untuk melihat daftar booking.
+                  </div>
+                ) : isDayBookingsLoading ? (
+                  <div className="rounded-2xl border border-dashed border-[var(--public-border)] bg-[var(--public-surface-soft)] px-4 py-5 text-sm text-[var(--public-text-muted)]">
+                    Jadwal ruangan sedang dimuat...
+                  </div>
+                ) : dayBookings.length > 0 ? (
+                  dayBookings.map((booking) => (
+                    <div
+                      key={booking.id}
+                      className="rounded-2xl border border-[var(--public-border)] bg-[var(--public-surface-soft)] px-4 py-4"
+                    >
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                          <p className="text-base font-semibold text-[var(--public-primary-hover)]">
+                            {booking.roomName}
+                          </p>
+                          <p className="mt-1 text-sm text-[var(--public-text-muted)]">
+                            {booking.studentName} · {booking.activityName}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-500">
+                            {format(parseISO(booking.start), 'HH:mm')} -{' '}
+                            {format(parseISO(booking.end), 'HH:mm')}
+                            {booking.unit ? ` · ${booking.unit}` : ''}
+                          </p>
+                        </div>
+                        <span
+                          className={`inline-flex w-fit rounded-full px-3 py-1 text-xs font-semibold ${statusClassMap[booking.status]}`}
+                        >
+                          {statusLabelMap[booking.status]}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-[var(--public-border)] bg-[var(--public-surface-soft)] px-4 py-5 text-sm text-[var(--public-text-muted)]">
+                    Belum ada booking pada tanggal ini.
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -508,26 +392,37 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
       <section className="py-12">
         <div className="public-container">
           <div className="public-card p-6 sm:p-8">
-            {isFormVisible && !isPastSelectedDate ? (
+            {!selectedDate ? (
+              <div className="rounded-[26px] border border-dashed border-[var(--public-border)] bg-[var(--public-surface-soft)] px-6 py-10 text-center">
+                <h2 className="text-2xl font-bold tracking-[-0.03em] text-[var(--public-primary-hover)]">
+                  Pilih Tanggal Terlebih Dahulu
+                </h2>
+                <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-[var(--public-text-muted)]">
+                  Klik tanggal di kalender untuk membuka form booking multi-ruangan.
+                </p>
+              </div>
+            ) : isPastSelectedDate ? (
+              <div className="rounded-[26px] border border-amber-200 bg-amber-50 px-6 py-10 text-center">
+                <h2 className="text-2xl font-bold tracking-[-0.03em] text-[var(--public-primary-hover)]">
+                  Booking Baru Tidak Tersedia Untuk Tanggal Yang Sudah Lewat
+                </h2>
+                <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-amber-800">
+                  Anda tetap bisa melihat daftar booking di panel kanan, namun pengajuan baru hanya tersedia mulai hari ini.
+                </p>
+              </div>
+            ) : (
               <>
                 <div className="flex flex-col gap-4 border-b border-[var(--public-border)] pb-6 sm:flex-row sm:items-start sm:justify-between">
                   <div>
                     <h2 className="text-2xl font-bold tracking-[-0.03em] text-[var(--public-primary-hover)]">
-                      Form Booking Lab / Ruang
+                      Form Booking Multi-Ruangan
                     </h2>
                     <p className="mt-2 text-sm text-[var(--public-text-muted)]">
-                      Lengkapi data berikut untuk mengajukan peminjaman pada
-                      jadwal yang sudah Anda pilih.
+                      Satu pengajuan bisa memesan beberapa ruangan pada tanggal yang sama dengan jam berbeda per ruangan.
                     </p>
                   </div>
                   <div className="rounded-2xl bg-[var(--public-surface-soft)] px-4 py-3 text-sm text-[var(--public-text-muted)]">
                     <p>
-                      <span className="font-semibold text-[var(--public-primary-hover)]">
-                        Ruangan:
-                      </span>{' '}
-                      {selectedRoomLabel || '-'}
-                    </p>
-                    <p className="mt-1">
                       <span className="font-semibold text-[var(--public-primary-hover)]">
                         Tanggal:
                       </span>{' '}
@@ -535,6 +430,32 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
                     </p>
                   </div>
                 </div>
+
+                {(errors.booking_slots || localConflicts.length > 0 || flash?.roomBookingConflicts?.length) ? (
+                  <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-700">
+                    {errors.booking_slots ? <p>{errors.booking_slots}</p> : null}
+                    {localConflicts.length > 0 ? (
+                      <p>
+                        Terdapat bentrok lokal pada slot: {localConflicts
+                          .map(
+                            (conflict) =>
+                              `${conflict.roomLabel} (${conflict.startTime}-${conflict.endTime})`,
+                          )
+                          .join(', ')}.
+                      </p>
+                    ) : null}
+                    {!errors.booking_slots && flash?.roomBookingConflicts?.length ? (
+                      <p>
+                        Konflik server: {flash.roomBookingConflicts
+                          .map(
+                            (conflict) =>
+                              `${conflict.room_name} (${conflict.start_time}-${conflict.end_time})`,
+                          )
+                          .join(', ')}.
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
 
                 <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
                   <div className="grid gap-5 md:grid-cols-2">
@@ -553,9 +474,7 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
                         className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
                       />
                       {errors.student_name ? (
-                        <p className="mt-2 text-xs text-red-600">
-                          {errors.student_name}
-                        </p>
+                        <p className="mt-2 text-xs text-red-600">{errors.student_name}</p>
                       ) : null}
                     </div>
 
@@ -571,11 +490,7 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
                         required
                         className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
                       />
-                      {errors.nim ? (
-                        <p className="mt-2 text-xs text-red-600">
-                          {errors.nim}
-                        </p>
-                      ) : null}
+                      {errors.nim ? <p className="mt-2 text-xs text-red-600">{errors.nim}</p> : null}
                     </div>
 
                     <div>
@@ -585,9 +500,7 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
                       </label>
                       <select
                         value={data.study_program}
-                        onChange={(event) =>
-                          setData('study_program', event.target.value)
-                        }
+                        onChange={(event) => setData('study_program', event.target.value)}
                         required
                         className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
                       >
@@ -599,9 +512,7 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
                         ))}
                       </select>
                       {errors.study_program ? (
-                        <p className="mt-2 text-xs text-red-600">
-                          {errors.study_program}
-                        </p>
+                        <p className="mt-2 text-xs text-red-600">{errors.study_program}</p>
                       ) : null}
                     </div>
 
@@ -612,17 +523,13 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
                       </label>
                       <input
                         value={data.phone_number}
-                        onChange={(event) =>
-                          setData('phone_number', event.target.value)
-                        }
+                        onChange={(event) => setData('phone_number', event.target.value)}
                         type="tel"
                         required
                         className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
                       />
                       {errors.phone_number ? (
-                        <p className="mt-2 text-xs text-red-600">
-                          {errors.phone_number}
-                        </p>
+                        <p className="mt-2 text-xs text-red-600">{errors.phone_number}</p>
                       ) : null}
                     </div>
 
@@ -633,18 +540,12 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
                       </label>
                       <input
                         value={data.unit}
-                        onChange={(event) =>
-                          setData('unit', event.target.value)
-                        }
+                        onChange={(event) => setData('unit', event.target.value)}
                         type="text"
                         required
                         className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
                       />
-                      {errors.unit ? (
-                        <p className="mt-2 text-xs text-red-600">
-                          {errors.unit}
-                        </p>
-                      ) : null}
+                      {errors.unit ? <p className="mt-2 text-xs text-red-600">{errors.unit}</p> : null}
                     </div>
 
                     <div>
@@ -654,60 +555,14 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
                       </label>
                       <input
                         value={data.number_of_participants}
-                        onChange={(event) =>
-                          setData('number_of_participants', event.target.value)
-                        }
+                        onChange={(event) => setData('number_of_participants', event.target.value)}
                         type="number"
                         min={1}
                         required
                         className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
                       />
                       {errors.number_of_participants ? (
-                        <p className="mt-2 text-xs text-red-600">
-                          {errors.number_of_participants}
-                        </p>
-                      ) : null}
-                    </div>
-
-                    <div>
-                      <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
-                        Jam Mulai
-                        <RequiredMark />
-                      </label>
-                      <input
-                        value={data.start_time}
-                        onChange={(event) =>
-                          setData('start_time', event.target.value)
-                        }
-                        type="time"
-                        required
-                        className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
-                      />
-                      {errors.start_time ? (
-                        <p className="mt-2 text-xs text-red-600">
-                          {errors.start_time}
-                        </p>
-                      ) : null}
-                    </div>
-
-                    <div>
-                      <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
-                        Jam Selesai
-                        <RequiredMark />
-                      </label>
-                      <input
-                        value={data.end_time}
-                        onChange={(event) =>
-                          setData('end_time', event.target.value)
-                        }
-                        type="time"
-                        required
-                        className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
-                      />
-                      {errors.end_time ? (
-                        <p className="mt-2 text-xs text-red-600">
-                          {errors.end_time}
-                        </p>
+                        <p className="mt-2 text-xs text-red-600">{errors.number_of_participants}</p>
                       ) : null}
                     </div>
                   </div>
@@ -719,18 +574,116 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
                     </label>
                     <textarea
                       value={data.activity_name}
-                      onChange={(event) =>
-                        setData('activity_name', event.target.value)
-                      }
+                      onChange={(event) => setData('activity_name', event.target.value)}
                       rows={3}
                       required
                       className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
                     />
                     {errors.activity_name ? (
-                      <p className="mt-2 text-xs text-red-600">
-                        {errors.activity_name}
-                      </p>
+                      <p className="mt-2 text-xs text-red-600">{errors.activity_name}</p>
                     ) : null}
+                  </div>
+
+                  <div className="rounded-2xl border border-[var(--public-border)] bg-[var(--public-surface-soft)] p-4 sm:p-5">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-semibold text-[var(--public-primary-hover)]">
+                        Slot Ruangan
+                        <RequiredMark />
+                      </p>
+                      <button
+                        type="button"
+                        onClick={addSlotRow}
+                        className="rounded-xl bg-[var(--public-primary-hover)] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-95"
+                      >
+                        Tambah Slot
+                      </button>
+                    </div>
+
+                    <div className="mt-4 space-y-3">
+                      {data.booking_slots.map((slot, slotIndex) => (
+                        <div
+                          key={`slot-${slotIndex}`}
+                          className="grid gap-3 rounded-2xl border border-[var(--public-border)] bg-white p-4 md:grid-cols-[1fr_0.8fr_0.8fr_auto]"
+                        >
+                          <div>
+                            <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.1em] text-[var(--public-text-muted)]">
+                              Ruangan
+                            </label>
+                            <select
+                              value={slot.room_id}
+                              onChange={(event) =>
+                                updateSlotRow(slotIndex, 'room_id', event.target.value)
+                              }
+                              required
+                              className="w-full rounded-xl border border-[var(--public-border)] px-4 py-2 text-sm"
+                            >
+                              <option value="">Pilih Ruangan</option>
+                              {rooms.map((room) => (
+                                <option key={room.id} value={room.id}>
+                                  {room.name} (Kapasitas {room.capacity})
+                                </option>
+                              ))}
+                            </select>
+                            {formErrors[`booking_slots.${slotIndex}.room_id`] ? (
+                              <p className="mt-2 text-xs text-red-600">
+                                {formErrors[`booking_slots.${slotIndex}.room_id`]}
+                              </p>
+                            ) : null}
+                          </div>
+
+                          <div>
+                            <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.1em] text-[var(--public-text-muted)]">
+                              Jam Mulai
+                            </label>
+                            <input
+                              value={slot.start_time}
+                              onChange={(event) =>
+                                updateSlotRow(slotIndex, 'start_time', event.target.value)
+                              }
+                              type="time"
+                              required
+                              className="w-full rounded-xl border border-[var(--public-border)] px-4 py-2 text-sm"
+                            />
+                            {formErrors[`booking_slots.${slotIndex}.start_time`] ? (
+                              <p className="mt-2 text-xs text-red-600">
+                                {formErrors[`booking_slots.${slotIndex}.start_time`]}
+                              </p>
+                            ) : null}
+                          </div>
+
+                          <div>
+                            <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.1em] text-[var(--public-text-muted)]">
+                              Jam Selesai
+                            </label>
+                            <input
+                              value={slot.end_time}
+                              onChange={(event) =>
+                                updateSlotRow(slotIndex, 'end_time', event.target.value)
+                              }
+                              type="time"
+                              required
+                              className="w-full rounded-xl border border-[var(--public-border)] px-4 py-2 text-sm"
+                            />
+                            {formErrors[`booking_slots.${slotIndex}.end_time`] ? (
+                              <p className="mt-2 text-xs text-red-600">
+                                {formErrors[`booking_slots.${slotIndex}.end_time`]}
+                              </p>
+                            ) : null}
+                          </div>
+
+                          <div className="flex items-end">
+                            <button
+                              type="button"
+                              onClick={() => removeSlotRow(slotIndex)}
+                              className="w-full rounded-xl border border-red-200 px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50"
+                              disabled={data.booking_slots.length <= 1}
+                            >
+                              Hapus
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
                   <div>
@@ -748,16 +701,14 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
                       className="w-full rounded-2xl border border-[var(--public-border)] bg-white px-5 py-3 text-sm file:mr-4 file:rounded-lg file:border-0 file:bg-[var(--public-primary-hover)] file:px-4 file:py-2 file:text-white"
                     />
                     {errors.document ? (
-                      <p className="mt-2 text-xs text-red-600">
-                        {errors.document}
-                      </p>
+                      <p className="mt-2 text-xs text-red-600">{errors.document}</p>
                     ) : null}
                   </div>
 
                   <div className="flex justify-end">
                     <button
                       type="submit"
-                      disabled={processing}
+                      disabled={processing || localConflicts.length > 0}
                       className="rounded-2xl bg-[var(--public-accent)] px-10 py-4 text-base font-semibold text-[var(--public-primary-hover)] shadow-[0_10px_22px_rgba(244,196,48,0.28)] transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-70"
                     >
                       {processing ? 'Mengirim...' : 'Ajukan Peminjaman'}
@@ -765,33 +716,6 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
                   </div>
                 </form>
               </>
-            ) : isPastSelectedDate && selectedDate ? (
-              <div className="rounded-[26px] border border-amber-200 bg-amber-50 px-6 py-10 text-center">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-amber-700">
-                  Mode Lihat Saja
-                </p>
-                <h2 className="mt-3 text-2xl font-bold tracking-[-0.03em] text-[var(--public-primary-hover)]">
-                  Booking Baru Tidak Tersedia Untuk Tanggal Yang Sudah Lewat
-                </h2>
-                <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-amber-800">
-                  Anda tetap bisa melihat siapa yang sudah melakukan booking
-                  pada {selectedDateLabel}, tetapi pengajuan baru hanya bisa
-                  dilakukan untuk hari ini dan tanggal setelahnya.
-                </p>
-              </div>
-            ) : (
-              <div className="rounded-[26px] border border-dashed border-[var(--public-border)] bg-[var(--public-surface-soft)] px-6 py-10 text-center">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--public-text-muted)]">
-                  Langkah 3
-                </p>
-                <h2 className="mt-3 text-2xl font-bold tracking-[-0.03em] text-[var(--public-primary-hover)]">
-                  Form Akan Muncul Setelah Anda Menekan Pinjam Tempat
-                </h2>
-                <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-[var(--public-text-muted)]">
-                  Pilih ruangan, klik tanggal di kalender, lalu lanjutkan dari
-                  popup daftar booking untuk membuka form pengajuan.
-                </p>
-              </div>
             )}
           </div>
         </div>

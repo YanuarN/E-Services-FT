@@ -2,6 +2,7 @@ export type BookingStatus = 'APPROVED' | 'PENDING' | 'REJECTED';
 
 export type BookingCalendarEvent = {
   id: number;
+  requestId?: number | null;
   roomId: number | null;
   roomName: string;
   studentName: string;

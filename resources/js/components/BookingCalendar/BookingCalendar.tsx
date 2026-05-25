@@ -14,7 +14,6 @@ import {
 import { useEffect, useMemo, useRef } from 'react';
 
 import type { BookingCalendarProps } from '@/types/components/BookingCalendar';
-import { getAvailabilityForDate } from '@/utils/BookingAvailability';
 
 const DAY_LABELS = ['MIN', 'SEN', 'SEL', 'RAB', 'KAM', 'JUM', 'SAB'];
 
@@ -23,9 +22,6 @@ const BookingCalendar = ({
   month,
   onSelectDate,
   onMonthChange,
-  availabilityMap,
-  isRoomSelected,
-  selectedRoomLabel,
 }: BookingCalendarProps) => {
   const calendarRef = useRef<FullCalendar | null>(null);
   const today = useMemo(() => startOfDay(new Date()), []);
@@ -71,33 +67,17 @@ const BookingCalendar = ({
   };
 
   const handleDateClick = ({ date }: DateClickArg) => {
-    if (!isRoomSelected || isBefore(startOfDay(date), today)) {
-      return;
-    }
-
     onSelectDate(date);
   };
 
   const dayCellClassNames = ({ date, view }: DayCellContentArg) => {
     const isOutside = !isSameMonth(date, view.currentStart);
     const isPastDate = isBefore(startOfDay(date), today);
-
-    if (!isRoomSelected) {
-      return [
-        'booking-fc-day',
-        'booking-fc-day-idle',
-        isOutside ? 'booking-fc-day-outside' : '',
-      ].filter(Boolean);
-    }
-
-    const availability = getAvailabilityForDate(date, availabilityMap);
     const isSelected = selectedDate ? isSameDay(date, selectedDate) : false;
 
     return [
       'booking-fc-day',
-      availability
-        ? `booking-fc-day-${availability.status}`
-        : 'booking-fc-day-available',
+      'booking-fc-day-idle',
       isPastDate ? 'booking-fc-day-disabled' : '',
       isSelected ? 'booking-fc-day-selected' : '',
       isOutside ? 'booking-fc-day-outside' : '',
@@ -105,29 +85,16 @@ const BookingCalendar = ({
   };
 
   const renderDayCellContent = ({ date, view }: DayCellContentArg) => {
-    const availability = getAvailabilityForDate(date, availabilityMap);
     const isSelected = selectedKey === format(date, 'yyyy-MM-dd');
     const isOutside = !isSameMonth(date, view.currentStart);
-
-    let statusLabel = '';
-
-    if (isRoomSelected) {
-      if (isSelected) {
-        statusLabel = 'PILIHAN ANDA';
-      } else if (availability?.status === 'full') {
-        statusLabel = 'PENUH';
-      } else if (availability?.status === 'partial') {
-        statusLabel = 'TERSEDIA SEBAGIAN';
-      }
-    }
 
     return (
       <div
         className={`booking-fc-day-inner ${isOutside ? 'booking-fc-day-inner-outside' : ''}`}
       >
         <span className="booking-fc-day-number">{date.getDate()}</span>
-        {statusLabel ? (
-          <span className="booking-fc-day-status">{statusLabel}</span>
+        {isSelected ? (
+          <span className="booking-fc-day-status">PILIHAN ANDA</span>
         ) : null}
       </div>
     );
@@ -141,9 +108,7 @@ const BookingCalendar = ({
             {renderedMonth}
           </h2>
           <p className="mt-1 text-sm text-[var(--public-text-muted)]">
-            {isRoomSelected
-              ? `Klik tanggal untuk melihat booking ${selectedRoomLabel ?? 'ruangan ini'}`
-              : 'Pilih ruangan terlebih dahulu agar warna ketersediaan tampil.'}
+            Klik tanggal untuk melihat daftar booking ruangan pada hari tersebut.
           </p>
         </div>
 
@@ -202,31 +167,16 @@ const BookingCalendar = ({
         />
       </div>
 
-      {isRoomSelected ? (
-        <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3 text-sm text-[var(--public-text-muted)]">
-          <div className="flex items-center gap-2">
-            <span className="h-4 w-4 rounded border border-[var(--public-border)] bg-white" />
-            <span>Tersedia</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="h-4 w-4 rounded bg-[#fff2a9]" />
-            <span>Tersedia Sebagian</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="h-4 w-4 rounded bg-[#a0303f]" />
-            <span>Penuh / Libur</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="h-4 w-4 rounded bg-[var(--public-primary-hover)]" />
-            <span>Pilihan Anda</span>
-          </div>
+      <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3 text-sm text-[var(--public-text-muted)]">
+        <div className="flex items-center gap-2">
+          <span className="h-4 w-4 rounded border border-[var(--public-border)] bg-white" />
+          <span>Tanggal biasa</span>
         </div>
-      ) : (
-        <div className="mt-5 rounded-2xl border border-dashed border-[var(--public-border)] bg-[var(--public-surface-soft)] px-4 py-3 text-sm text-[var(--public-text-muted)]">
-          Pilih ruangan terlebih dahulu agar kalender menampilkan warna
-          ketersediaan sesuai ruangan yang dipilih.
+        <div className="flex items-center gap-2">
+          <span className="h-4 w-4 rounded bg-[var(--public-primary-hover)]" />
+          <span>Pilihan Anda</span>
         </div>
-      )}
+      </div>
     </div>
   );
 };

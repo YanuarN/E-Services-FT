@@ -6,6 +6,7 @@ use App\Models\AdminWhatsappContact;
 use App\Models\ExamPermissionLetter;
 use App\Models\ResearchPermissionLetter;
 use App\Models\RoomUsageRequest;
+use App\Models\RoomUsageRequestSlot;
 use App\Services\WhatsAppNotificationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -106,6 +107,18 @@ class WhatsAppNotificationServiceTest extends TestCase
             'activity_name' => 'Rapat Panitia',
             'start_at' => '2026-04-30 09:00:00',
         ]);
+        $record->setRelation('slots', collect([
+            new RoomUsageRequestSlot([
+                'room_name_snapshot' => 'Lab Komputer 1',
+                'start_at' => '2026-04-30 09:00:00',
+                'end_at' => '2026-04-30 11:00:00',
+            ]),
+            new RoomUsageRequestSlot([
+                'room_name_snapshot' => 'Lab Komputer 2',
+                'start_at' => '2026-04-30 13:00:00',
+                'end_at' => '2026-04-30 15:00:00',
+            ]),
+        ]));
 
         $url = WhatsAppNotificationService::buildSubmissionUrl($record);
         $decodedUrl = urldecode((string) $url);
@@ -114,6 +127,7 @@ class WhatsAppNotificationServiceTest extends TestCase
         $this->assertStringContainsString('https://wa.me/628111222333?text=', $url);
         $this->assertStringContainsString('Konfirmasi Pengajuan Peminjaman Ruang Lab Komputer 1', $decodedUrl);
         $this->assertStringContainsString('Ruang: Lab Komputer 1', $decodedUrl);
+        $this->assertStringContainsString('Detail Ruang/Jam: Lab Komputer 1 (09:00-11:00), Lab Komputer 2 (13:00-15:00)', $decodedUrl);
         $this->assertStringContainsString('Agenda: Rapat Panitia', $decodedUrl);
         $this->assertStringContainsString('Tanggal Peminjaman: 30 April 2026', $decodedUrl);
     }

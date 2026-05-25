@@ -3,8 +3,10 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasPublicToken;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class RoomUsageRequest extends Model
 {
@@ -42,16 +44,61 @@ class RoomUsageRequest extends Model
         return $this->belongsTo(Room::class);
     }
 
+    public function slots(): HasMany
+    {
+        return $this->hasMany(RoomUsageRequestSlot::class);
+    }
+
     public function getResolvedRoomNameAttribute(): string
     {
-        if ($this->relationLoaded('room') && $this->room) {
-            return (string) $this->room->name;
+        if ($this->relationLoaded('slots') && $this->slots->isNotEmpty()) {
+            return $this->slots
+                ->map(fn (RoomUsageRequestSlot $slot): string => $slot->room_name_snapshot ?: (string) ($slot->room?->name ?? 'Ruang'))
+                ->filter()
+                ->unique()
+                ->values()
+                ->join(', ');
         }
 
         if (filled($this->room_name)) {
             return (string) $this->room_name;
         }
 
+        if ($this->relationLoaded('room') && $this->room) {
+            return (string) $this->room->name;
+        }
+
         return (string) $this->room()->value('name');
+    }
+
+    public function getSlotSummaryAttribute(): string
+    {
+        if (! $this->relationLoaded('slots')) {
+            $this->loadMissing('slots.room');
+        }
+
+        return $this->slots
+            ->sortBy('start_at')
+            ->map(function (RoomUsageRequestSlot $slot): string {
+                $roomName = trim((string) ($slot->room_name_snapshot ?: ($slot->room?->name ?? 'Ruang')));
+
+                return sprintf(
+                    '%s (%s-%s)',
+                    $roomName,
+                    $this->formatTime($slot->start_at),
+                    $this->formatTime($slot->end_at),
+                );
+            })
+            ->values()
+            ->join(', ');
+    }
+
+    private function formatTime(CarbonInterface|string|null $value): string
+    {
+        if ($value instanceof CarbonInterface) {
+            return $value->format('H:i');
+        }
+
+        return '-';
     }
 }

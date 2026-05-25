@@ -269,10 +269,12 @@ class WhatsAppNotificationService
     {
         $studentName = self::getStudentName($record);
         $nim = self::getStudentNim($record);
+        $record->loadMissing('slots.room');
         $roomName = trim((string) ($record->resolved_room_name ?: 'Ruang'));
         $submittedDate = self::formatRecordDate(now());
         $bookingDate = self::formatRecordDate($record->start_at);
         $agenda = trim((string) ($record->activity_name ?? '-'));
+        $slotDetails = self::buildRoomSlotLines($record);
 
         return implode("\n", [
             "Konfirmasi Pengajuan Peminjaman Ruang {$roomName}",
@@ -282,12 +284,32 @@ class WhatsAppNotificationService
             "Nama: {$studentName}",
             "NIM: {$nim}",
             "Ruang: {$roomName}",
+            "Detail Ruang/Jam: {$slotDetails}",
             "Tanggal Pengajuan: {$submittedDate}",
             "Tanggal Peminjaman: {$bookingDate}",
             "Agenda: {$agenda}",
             '',
             'Mohon kesediaannya untuk memeriksa dan memproses ajuan tersebut. Terima kasih.',
         ]);
+    }
+
+    private static function buildRoomSlotLines(RoomUsageRequest $record): string
+    {
+        if ($record->slots->isEmpty()) {
+            return '-';
+        }
+
+        return $record->slots
+            ->sortBy('start_at')
+            ->map(function ($slot): string {
+                $roomName = trim((string) ($slot->room_name_snapshot ?: ($slot->room?->name ?? 'Ruang')));
+                $start = $slot->start_at ? $slot->start_at->format('H:i') : '-';
+                $end = $slot->end_at ? $slot->end_at->format('H:i') : '-';
+
+                return "{$roomName} ({$start}-{$end})";
+            })
+            ->values()
+            ->join(', ');
     }
 
     private static function formatRecordDate(null|string|CarbonInterface $value): string

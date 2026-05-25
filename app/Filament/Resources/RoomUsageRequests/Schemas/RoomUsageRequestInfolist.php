@@ -32,7 +32,10 @@ class RoomUsageRequestInfolist
                         TextEntry::make('activity_name')
                             ->label('Nama Kegiatan'),
                         TextEntry::make('resolved_room_name')
-                            ->label('Ruang')
+                            ->label('Daftar Ruangan')
+                            ->placeholder('-'),
+                        TextEntry::make('slot_summary')
+                            ->label('Detail Slot')
                             ->placeholder('-'),
                         TextEntry::make('number_of_participants')
                             ->label('Jumlah Peserta'),

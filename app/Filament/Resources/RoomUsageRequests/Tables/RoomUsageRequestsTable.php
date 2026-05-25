@@ -33,7 +33,13 @@ class RoomUsageRequestsTable
                     ->limit(40)
                     ->searchable(),
                 TextColumn::make('resolved_room_name')
-                    ->label('Ruang')
+                    ->label('Ruangan')
+                    ->limit(40)
+                    ->placeholder('-')
+                    ->toggleable(),
+                TextColumn::make('slot_summary')
+                    ->label('Detail Slot')
+                    ->limit(60)
                     ->placeholder('-')
                     ->toggleable(),
                 TextColumn::make('start_at')

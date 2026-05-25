@@ -20,7 +20,9 @@ class RoomUsageRequestDocumentService extends UniversalLetterService
     protected function buildTemplatePayload(Model $letter): array
     {
         /** @var RoomUsageRequest $letter */
+        $letter->loadMissing('slots.room');
         $roomName = $this->resolveRoomName($letter);
+        $slotSummary = $this->buildSlotSummary($letter);
         $usageTime = $this->buildUsageTime($letter);
 
         return array_merge(
@@ -44,6 +46,8 @@ class RoomUsageRequestDocumentService extends UniversalLetterService
                 'tempat_ruang' => $roomName,
                 'ruang' => $roomName,
                 'tempat' => $roomName,
+                'daftar_ruangan_jam' => $slotSummary,
+                'detail_ruangan' => $slotSummary,
                 'nama' => $letter->student_name,
                 'nama_peminjam' => $letter->student_name,
                 'no_telp' => $letter->phone_number,
@@ -74,6 +78,7 @@ class RoomUsageRequestDocumentService extends UniversalLetterService
             $this->makeVerificationField('Tanggal Penggunaan', $this->formatDate($letter->start_at)),
             $this->makeVerificationField('Waktu Penggunaan', $this->buildUsageTime($letter)),
             $this->makeVerificationField('Tempat/Ruang', $this->resolveRoomName($letter)),
+            $this->makeVerificationField('Detail Ruangan/Jam', $this->buildSlotSummary($letter)),
             $this->makeVerificationField('Jumlah Peserta', $letter->number_of_participants),
         ];
     }
@@ -89,5 +94,26 @@ class RoomUsageRequestDocumentService extends UniversalLetterService
     private function resolveRoomName(RoomUsageRequest $letter): string
     {
         return $letter->resolved_room_name;
+    }
+
+    private function buildSlotSummary(RoomUsageRequest $letter): string
+    {
+        $letter->loadMissing('slots.room');
+
+        if ($letter->slots->isEmpty()) {
+            return $letter->resolved_room_name;
+        }
+
+        return $letter->slots
+            ->sortBy('start_at')
+            ->map(function ($slot): string {
+                $roomName = trim((string) ($slot->room_name_snapshot ?: ($slot->room?->name ?? 'Ruang')));
+                $start = $this->formatTime($slot->start_at);
+                $end = $this->formatTime($slot->end_at);
+
+                return "{$roomName} ({$start}-{$end})";
+            })
+            ->values()
+            ->join(', ');
     }
 }

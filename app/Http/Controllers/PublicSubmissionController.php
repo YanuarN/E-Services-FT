@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Room;
 use App\Models\RoomUsageRequest;
+use App\Models\RoomUsageRequestSlot;
 use App\Services\Letters\DocumentVerificationService;
 use App\Services\WhatsAppNotificationService;
 use App\Support\PublicServiceCatalog;
@@ -12,8 +13,10 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class PublicSubmissionController extends Controller
 {
@@ -43,99 +46,220 @@ class PublicSubmissionController extends Controller
             'phone_number' => ['required', 'string', 'max:255'],
             'unit' => ['required', 'string', 'max:255'],
             'activity_name' => ['required', 'string', 'max:500'],
-            'room_id' => ['required', 'integer', Rule::exists('rooms', 'id')],
             'number_of_participants' => ['required', 'integer', 'min:1'],
             'selected_date' => ['required', 'date', 'after_or_equal:today'],
-            'start_time' => ['required', 'date_format:H:i'],
-            'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
+            'booking_slots' => ['required', 'array', 'min:1'],
+            'booking_slots.*.room_id' => ['required', 'integer', Rule::exists('rooms', 'id')],
+            'booking_slots.*.start_time' => ['required', 'date_format:H:i'],
+            'booking_slots.*.end_time' => ['required', 'date_format:H:i'],
             'document' => ['required', 'file', 'mimes:pdf,doc,docx,jpg,jpeg,png', 'max:10240'],
         ]);
 
-        $startAt = Carbon::createFromFormat(
-            'Y-m-d H:i',
-            "{$validated['selected_date']} {$validated['start_time']}",
-            config('app.timezone')
-        );
-        $endAt = Carbon::createFromFormat(
-            'Y-m-d H:i',
-            "{$validated['selected_date']} {$validated['end_time']}",
-            config('app.timezone')
-        );
+        $bookingDate = Carbon::parse($validated['selected_date'], config('app.timezone'))->toDateString();
+        $roomMap = Room::query()
+            ->whereIn('id', collect($validated['booking_slots'])->pluck('room_id')->unique()->values())
+            ->pluck('name', 'id');
+        $slots = $this->normalizeBookingSlots($validated['booking_slots'], $bookingDate, $roomMap->all());
+        $conflicts = $this->findConflictedSlots($slots, $bookingDate);
 
-        $room = Room::query()->findOrFail($validated['room_id']);
+        if ($conflicts->isNotEmpty()) {
+            $conflictSummary = $conflicts
+                ->map(fn (array $slot): string => sprintf(
+                    '%s (%s-%s)',
+                    $slot['room_name'],
+                    $slot['start_time'],
+                    $slot['end_time'],
+                ))
+                ->unique()
+                ->values()
+                ->join(', ');
 
-        $hasConflict = RoomUsageRequest::query()
-            ->whereIn('status', ['PENDING', 'APPROVED'])
-            ->where('room_id', $room->id)
-            ->where('start_at', '<', $endAt)
-            ->where('end_at', '>', $startAt)
-            ->exists();
-
-        if ($hasConflict) {
             return back()
                 ->withErrors([
-                    'start_time' => 'Jam yang dipilih bentrok dengan jadwal booking lain. Silakan pilih jam lain.',
+                    'booking_slots' => "Jadwal bentrok dengan booking aktif: {$conflictSummary}.",
                 ])
-                ->withInput();
+                ->withInput()
+                ->with('roomBookingConflicts', $conflicts->values()->all());
         }
 
         $documentPath = Storage::disk('local')->putFile('room-usage-requests', $request->file('document'));
 
-        $record = RoomUsageRequest::query()->create([
-            'student_name' => $validated['student_name'],
-            'nim' => $validated['nim'],
-            'study_program' => $validated['study_program'],
-            'phone_number' => $validated['phone_number'],
-            'unit' => $validated['unit'],
-            'activity_name' => $validated['activity_name'],
-            'start_at' => $startAt,
-            'end_at' => $endAt,
-            'room_id' => $room->id,
-            'room_name' => $room->name,
-            'number_of_participants' => $validated['number_of_participants'],
-            'status' => 'PENDING',
-            'document' => $documentPath,
-        ]);
+        $record = DB::transaction(function () use ($validated, $slots, $documentPath): RoomUsageRequest {
+            $firstSlot = $slots->first();
+            $startAt = $slots->min('start_at');
+            $endAt = $slots->max('end_at');
+            $roomNames = $slots->pluck('room_name')->filter()->unique()->values()->join(', ');
+
+            $requestRecord = RoomUsageRequest::query()->create([
+                'student_name' => $validated['student_name'],
+                'nim' => $validated['nim'],
+                'study_program' => $validated['study_program'],
+                'phone_number' => $validated['phone_number'],
+                'unit' => $validated['unit'],
+                'activity_name' => $validated['activity_name'],
+                'start_at' => $startAt,
+                'end_at' => $endAt,
+                'room_id' => $firstSlot['room_id'],
+                'room_name' => $roomNames,
+                'number_of_participants' => $validated['number_of_participants'],
+                'status' => 'PENDING',
+                'document' => $documentPath,
+            ]);
+
+            $requestRecord->slots()->createMany(
+                $slots->map(fn (array $slot): array => [
+                    'room_id' => $slot['room_id'],
+                    'room_name_snapshot' => $slot['room_name'],
+                    'booking_date' => $slot['booking_date'],
+                    'start_at' => $slot['start_at'],
+                    'end_at' => $slot['end_at'],
+                ])->values()->all()
+            );
+
+            return $requestRecord->loadMissing('slots.room');
+        });
 
         return to_route('booking')
             ->with('success', 'Pengajuan booking ruangan berhasil dikirim. Informasi lanjutan akan dikirim melalui WhatsApp.')
             ->with('whatsappUrl', WhatsAppNotificationService::buildSubmissionUrl($record));
     }
 
-    public function roomBookings(Room $room): JsonResponse
+    public function roomBookingsByDate(Request $request): JsonResponse
     {
-        $bookings = RoomUsageRequest::query()
-            ->where('room_id', $room->id)
-            ->whereIn('status', ['PENDING', 'APPROVED'])
-            ->where('end_at', '>=', Carbon::today(config('app.timezone'))->startOfDay())
+        $validated = $request->validate([
+            'selected_date' => ['required', 'date'],
+        ]);
+
+        $bookingDate = Carbon::parse($validated['selected_date'], config('app.timezone'))->toDateString();
+
+        $bookings = RoomUsageRequestSlot::query()
+            ->with([
+                'room:id,name',
+                'roomUsageRequest:id,student_name,activity_name,unit,status',
+            ])
+            ->where('booking_date', $bookingDate)
+            ->whereHas('roomUsageRequest', function ($query): void {
+                $query->whereIn('status', ['PENDING', 'APPROVED']);
+            })
             ->orderBy('start_at')
-            ->get([
-                'id',
-                'room_id',
-                'room_name',
-                'student_name',
-                'activity_name',
-                'unit',
-                'start_at',
-                'end_at',
-                'status',
-            ])
-            ->map(fn (RoomUsageRequest $booking) => [
-                'id' => $booking->id,
-                'roomId' => $booking->room_id,
-                'roomName' => $booking->resolved_room_name,
-                'studentName' => $booking->student_name,
-                'activityName' => $booking->activity_name,
-                'unit' => $booking->unit,
-                'start' => $booking->start_at?->toIso8601String(),
-                'end' => $booking->end_at?->toIso8601String(),
-                'status' => $booking->status,
-            ])
+            ->get()
+            ->map(function (RoomUsageRequestSlot $slot): array {
+                $requestRecord = $slot->roomUsageRequest;
+                $roomName = $slot->room_name_snapshot ?: (string) ($slot->room?->name ?? 'Ruang');
+
+                return [
+                    'id' => $slot->id,
+                    'requestId' => $requestRecord?->id,
+                    'roomId' => $slot->room_id,
+                    'roomName' => $roomName,
+                    'studentName' => $requestRecord?->student_name ?? '-',
+                    'activityName' => $requestRecord?->activity_name ?? '-',
+                    'unit' => $requestRecord?->unit ?? '',
+                    'start' => $slot->start_at?->toIso8601String(),
+                    'end' => $slot->end_at?->toIso8601String(),
+                    'status' => (string) ($requestRecord?->status ?? 'PENDING'),
+                ];
+            })
             ->values();
 
         return response()->json([
             'data' => $bookings,
         ]);
+    }
+
+    /**
+     * @param  array<int, array{room_id:int, start_time:string, end_time:string}>  $rawSlots
+     * @param  array<int, string>  $roomMap
+     * @return Collection<int, array{room_id:int, room_name:string, booking_date:string, start_at:Carbon, end_at:Carbon}>
+     *
+     * @throws ValidationException
+     */
+    private function normalizeBookingSlots(array $rawSlots, string $bookingDate, array $roomMap): Collection
+    {
+        $timezone = config('app.timezone');
+        $slots = collect();
+        $duplicateKeys = [];
+
+        foreach ($rawSlots as $index => $slot) {
+            $startAt = Carbon::createFromFormat('Y-m-d H:i', "{$bookingDate} {$slot['start_time']}", $timezone);
+            $endAt = Carbon::createFromFormat('Y-m-d H:i', "{$bookingDate} {$slot['end_time']}", $timezone);
+
+            if ($endAt->lessThanOrEqualTo($startAt)) {
+                throw ValidationException::withMessages([
+                    "booking_slots.{$index}.end_time" => 'Jam selesai harus lebih besar dari jam mulai.',
+                ]);
+            }
+
+            $duplicateKey = implode('|', [
+                $slot['room_id'],
+                $startAt->format('Y-m-d H:i:s'),
+                $endAt->format('Y-m-d H:i:s'),
+            ]);
+
+            if (isset($duplicateKeys[$duplicateKey])) {
+                throw ValidationException::withMessages([
+                    "booking_slots.{$index}.room_id" => 'Slot ruangan duplikat tidak diperbolehkan.',
+                ]);
+            }
+
+            $duplicateKeys[$duplicateKey] = true;
+
+            $slots->push([
+                'room_id' => (int) $slot['room_id'],
+                'room_name' => (string) ($roomMap[(int) $slot['room_id']] ?? 'Ruang'),
+                'booking_date' => $bookingDate,
+                'start_at' => $startAt,
+                'end_at' => $endAt,
+            ]);
+        }
+
+        return $slots;
+    }
+
+    /**
+     * @param  Collection<int, array{room_id:int, room_name:string, booking_date:string, start_at:Carbon, end_at:Carbon}>  $slots
+     * @return Collection<int, array{room_id:int, room_name:string, start_time:string, end_time:string}>
+     */
+    private function findConflictedSlots(Collection $slots, string $bookingDate): Collection
+    {
+        if ($slots->isEmpty()) {
+            return collect();
+        }
+
+        $conflicts = RoomUsageRequestSlot::query()
+            ->join(
+                'room_usage_requests',
+                'room_usage_requests.id',
+                '=',
+                'room_usage_request_slots.room_usage_request_id',
+            )
+            ->whereIn('room_usage_requests.status', ['PENDING', 'APPROVED'])
+            ->where('room_usage_request_slots.booking_date', $bookingDate)
+            ->where(function ($query) use ($slots): void {
+                foreach ($slots as $slot) {
+                    $query->orWhere(function ($innerQuery) use ($slot): void {
+                        $innerQuery
+                            ->where('room_usage_request_slots.room_id', $slot['room_id'])
+                            ->where('room_usage_request_slots.start_at', '<', $slot['end_at'])
+                            ->where('room_usage_request_slots.end_at', '>', $slot['start_at']);
+                    });
+                }
+            })
+            ->get([
+                'room_usage_request_slots.room_id',
+                'room_usage_request_slots.room_name_snapshot',
+                'room_usage_request_slots.start_at',
+                'room_usage_request_slots.end_at',
+            ]);
+
+        return $conflicts
+            ->map(fn ($conflict): array => [
+                'room_id' => (int) $conflict->room_id,
+                'room_name' => (string) ($conflict->room_name_snapshot ?? 'Ruang'),
+                'start_time' => Carbon::parse($conflict->start_at, config('app.timezone'))->format('H:i'),
+                'end_time' => Carbon::parse($conflict->end_at, config('app.timezone'))->format('H:i'),
+            ])
+            ->values();
     }
 
     /**

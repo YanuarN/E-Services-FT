@@ -35,8 +35,8 @@ Route::get('/booking', function () {
     ]);
 })->name('booking');
 
-Route::get('/booking/rooms/{room}/bookings', [PublicSubmissionController::class, 'roomBookings'])
-    ->name('booking.rooms.bookings');
+Route::get('/booking/bookings', [PublicSubmissionController::class, 'roomBookingsByDate'])
+    ->name('booking.bookings.by-date');
 
 Route::post('/booking', [PublicSubmissionController::class, 'storeRoomBooking'])
     ->name('booking.store');
