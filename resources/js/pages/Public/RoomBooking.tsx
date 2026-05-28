@@ -10,6 +10,10 @@ import type {
   RoomBookingProps,
   RoomBookingSharedPageProps,
 } from '@/types/pages/Public/RoomBooking';
+import {
+  preventNonNumericKeydown,
+  sanitizeNumericValue,
+} from '@/utils/NumericInput';
 
 type BookingSlotForm = {
   room_id: string;
@@ -66,6 +70,7 @@ const hasOverlap = (
 const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
   const [month, setMonth] = useState(startOfMonth(new Date()));
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [dayBookings, setDayBookings] = useState<BookingCalendarEvent[]>([]);
   const [isDayBookingsLoading, setIsDayBookingsLoading] = useState(false);
@@ -164,6 +169,7 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
 
   const handleDateChange = (date: Date | undefined) => {
     setSelectedDate(date);
+    setIsFormModalOpen(false);
   };
 
   const addSlotRow = () => {
@@ -263,6 +269,7 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
       onSuccess: () => {
         reset();
         setData('booking_slots', [{ room_id: '', start_time: '', end_time: '' }]);
+        setIsFormModalOpen(false);
       },
     });
   };
@@ -312,7 +319,7 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
       <section className="py-8 sm:py-10">
         <div className="public-container">
           <h1 className="text-4xl font-bold tracking-[-0.05em] text-[var(--public-primary-hover)] sm:text-5xl">
-            Peminjaman Ruang Multi-Ruangan
+            Peminjaman Ruang 
           </h1>
         </div>
       </section>
@@ -327,13 +334,23 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
               onMonthChange={setMonth}
             />
 
-            <div className="public-card p-6">
+            <div className="public-card flex h-full flex-col p-5">
               <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--public-text-muted)]">
                 Booking Hari Terpilih
               </p>
-              <p className="mt-2 text-lg font-semibold text-[var(--public-primary-hover)]">
-                {selectedDateLabel}
-              </p>
+              <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-lg font-semibold text-[var(--public-primary-hover)]">
+                  {selectedDateLabel}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setIsFormModalOpen(true)}
+                  disabled={!selectedDate || isPastSelectedDate}
+                  className="rounded-xl bg-[var(--public-accent)] px-5 py-2 text-sm font-semibold text-[var(--public-primary-hover)] transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Ajukan
+                </button>
+              </div>
 
               {dayBookingsError ? (
                 <p className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -341,7 +358,13 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
                 </p>
               ) : null}
 
-              <div className="mt-5 space-y-3">
+              {selectedDate && isPastSelectedDate ? (
+                <p className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                  Pengajuan baru hanya tersedia mulai hari ini.
+                </p>
+              ) : null}
+
+              <div className="mt-4 min-h-0 flex-1 space-y-3 overflow-y-auto pr-1 xl:max-h-[560px]">
                 {!selectedDate ? (
                   <div className="rounded-2xl border border-dashed border-[var(--public-border)] bg-[var(--public-surface-soft)] px-4 py-5 text-sm text-[var(--public-text-muted)]">
                     Klik tanggal pada kalender untuk melihat daftar booking.
@@ -354,7 +377,7 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
                   dayBookings.map((booking) => (
                     <div
                       key={booking.id}
-                      className="rounded-2xl border border-[var(--public-border)] bg-[var(--public-surface-soft)] px-4 py-4"
+                      className="rounded-2xl border border-[var(--public-border)] bg-[var(--public-surface-soft)] px-4 py-3"
                     >
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div>
@@ -389,337 +412,329 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
         </div>
       </section>
 
-      <section className="py-12">
-        <div className="public-container">
-          <div className="public-card p-6 sm:p-8">
-            {!selectedDate ? (
-              <div className="rounded-[26px] border border-dashed border-[var(--public-border)] bg-[var(--public-surface-soft)] px-6 py-10 text-center">
-                <h2 className="text-2xl font-bold tracking-[-0.03em] text-[var(--public-primary-hover)]">
-                  Pilih Tanggal Terlebih Dahulu
+      {isFormModalOpen && selectedDate && !isPastSelectedDate ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-8">
+          <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-3xl bg-white p-5 shadow-2xl sm:p-6">
+            <div className="flex items-start justify-between gap-4 border-b border-[var(--public-border)] pb-5">
+              <div>
+                <h2 className="text-xl font-bold tracking-[-0.03em] text-[var(--public-primary-hover)] sm:text-2xl">
+                  Form Booking Multi-Ruangan
                 </h2>
-                <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-[var(--public-text-muted)]">
-                  Klik tanggal di kalender untuk membuka form booking multi-ruangan.
+                <p className="mt-2 text-sm text-[var(--public-text-muted)]">
+                  Satu pengajuan bisa memesan beberapa ruangan pada tanggal yang sama dengan jam berbeda per ruangan.
                 </p>
               </div>
-            ) : isPastSelectedDate ? (
-              <div className="rounded-[26px] border border-amber-200 bg-amber-50 px-6 py-10 text-center">
-                <h2 className="text-2xl font-bold tracking-[-0.03em] text-[var(--public-primary-hover)]">
-                  Booking Baru Tidak Tersedia Untuk Tanggal Yang Sudah Lewat
-                </h2>
-                <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-amber-800">
-                  Anda tetap bisa melihat daftar booking di panel kanan, namun pengajuan baru hanya tersedia mulai hari ini.
-                </p>
+              <button
+                type="button"
+                onClick={() => setIsFormModalOpen(false)}
+                className="rounded-full p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+                aria-label="Tutup form booking"
+              >
+                <svg viewBox="0 0 20 20" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <path d="m5 5 10 10M15 5 5 15" />
+                </svg>
+              </button>
+            </div>
+
+            {(errors.booking_slots || localConflicts.length > 0 || flash?.roomBookingConflicts?.length) ? (
+              <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-700">
+                {errors.booking_slots ? <p>{errors.booking_slots}</p> : null}
+                {localConflicts.length > 0 ? (
+                  <p>
+                    Terdapat bentrok lokal pada slot: {localConflicts
+                      .map(
+                        (conflict) =>
+                          `${conflict.roomLabel} (${conflict.startTime}-${conflict.endTime})`,
+                      )
+                      .join(', ')}.
+                  </p>
+                ) : null}
+                {!errors.booking_slots && flash?.roomBookingConflicts?.length ? (
+                  <p>
+                    Konflik server: {flash.roomBookingConflicts
+                      .map(
+                        (conflict) =>
+                          `${conflict.room_name} (${conflict.start_time}-${conflict.end_time})`,
+                      )
+                      .join(', ')}.
+                  </p>
+                ) : null}
               </div>
-            ) : (
-              <>
-                <div className="flex flex-col gap-4 border-b border-[var(--public-border)] pb-6 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <h2 className="text-2xl font-bold tracking-[-0.03em] text-[var(--public-primary-hover)]">
-                      Form Booking Multi-Ruangan
-                    </h2>
-                    <p className="mt-2 text-sm text-[var(--public-text-muted)]">
-                      Satu pengajuan bisa memesan beberapa ruangan pada tanggal yang sama dengan jam berbeda per ruangan.
-                    </p>
-                  </div>
-                  <div className="rounded-2xl bg-[var(--public-surface-soft)] px-4 py-3 text-sm text-[var(--public-text-muted)]">
-                    <p>
-                      <span className="font-semibold text-[var(--public-primary-hover)]">
-                        Tanggal:
-                      </span>{' '}
-                      {selectedDateLabel}
-                    </p>
-                  </div>
+            ) : null}
+
+            <form className="mt-6 space-y-5" onSubmit={handleSubmit}>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
+                    Nama Mahasiswa
+                    <RequiredMark />
+                  </label>
+                  <input
+                    value={data.student_name}
+                    onChange={(event) =>
+                      setData('student_name', event.target.value)
+                    }
+                    type="text"
+                    required
+                    className="w-full rounded-2xl border border-[var(--public-border)] px-4 py-2.5 text-sm"
+                  />
+                  {errors.student_name ? (
+                    <p className="mt-2 text-xs text-red-600">{errors.student_name}</p>
+                  ) : null}
                 </div>
 
-                {(errors.booking_slots || localConflicts.length > 0 || flash?.roomBookingConflicts?.length) ? (
-                  <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-700">
-                    {errors.booking_slots ? <p>{errors.booking_slots}</p> : null}
-                    {localConflicts.length > 0 ? (
-                      <p>
-                        Terdapat bentrok lokal pada slot: {localConflicts
-                          .map(
-                            (conflict) =>
-                              `${conflict.roomLabel} (${conflict.startTime}-${conflict.endTime})`,
-                          )
-                          .join(', ')}.
-                      </p>
-                    ) : null}
-                    {!errors.booking_slots && flash?.roomBookingConflicts?.length ? (
-                      <p>
-                        Konflik server: {flash.roomBookingConflicts
-                          .map(
-                            (conflict) =>
-                              `${conflict.room_name} (${conflict.start_time}-${conflict.end_time})`,
-                          )
-                          .join(', ')}.
-                      </p>
-                    ) : null}
-                  </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
+                    NIM
+                    <RequiredMark />
+                  </label>
+                  <input
+                    value={data.nim}
+                    onChange={(event) => setData('nim', event.target.value)}
+                    type="text"
+                    required
+                    className="w-full rounded-2xl border border-[var(--public-border)] px-4 py-2.5 text-sm"
+                  />
+                  {errors.nim ? <p className="mt-2 text-xs text-red-600">{errors.nim}</p> : null}
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
+                    Program Studi
+                    <RequiredMark />
+                  </label>
+                  <select
+                    value={data.study_program}
+                    onChange={(event) => setData('study_program', event.target.value)}
+                    required
+                    className="w-full rounded-2xl border border-[var(--public-border)] px-4 py-2.5 text-sm"
+                  >
+                    <option value="">Pilih Program Studi</option>
+                    {studyPrograms.map((program) => (
+                      <option key={program} value={program}>
+                        {program}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.study_program ? (
+                    <p className="mt-2 text-xs text-red-600">{errors.study_program}</p>
+                  ) : null}
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
+                    Nomor WhatsApp
+                    <RequiredMark />
+                  </label>
+                  <input
+                    value={data.phone_number}
+                    onChange={(event) =>
+                      setData('phone_number', sanitizeNumericValue(event.target.value))
+                    }
+                    type="tel"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    onKeyDown={preventNonNumericKeydown}
+                    required
+                    className="w-full rounded-2xl border border-[var(--public-border)] px-4 py-2.5 text-sm"
+                  />
+                  {errors.phone_number ? (
+                    <p className="mt-2 text-xs text-red-600">{errors.phone_number}</p>
+                  ) : null}
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
+                    Unit / Organisasi
+                    <RequiredMark />
+                  </label>
+                  <input
+                    value={data.unit}
+                    onChange={(event) => setData('unit', event.target.value)}
+                    type="text"
+                    required
+                    className="w-full rounded-2xl border border-[var(--public-border)] px-4 py-2.5 text-sm"
+                  />
+                  {errors.unit ? <p className="mt-2 text-xs text-red-600">{errors.unit}</p> : null}
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
+                    Jumlah Peserta
+                    <RequiredMark />
+                  </label>
+                  <input
+                    value={data.number_of_participants}
+                    onChange={(event) => setData('number_of_participants', event.target.value)}
+                    type="number"
+                    min={1}
+                    required
+                    className="w-full rounded-2xl border border-[var(--public-border)] px-4 py-2.5 text-sm"
+                  />
+                  {errors.number_of_participants ? (
+                    <p className="mt-2 text-xs text-red-600">{errors.number_of_participants}</p>
+                  ) : null}
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
+                  Nama Kegiatan
+                  <RequiredMark />
+                </label>
+                <textarea
+                  value={data.activity_name}
+                  onChange={(event) => setData('activity_name', event.target.value)}
+                  rows={2}
+                  required
+                  className="w-full rounded-2xl border border-[var(--public-border)] px-4 py-2.5 text-sm"
+                />
+                {errors.activity_name ? (
+                  <p className="mt-2 text-xs text-red-600">{errors.activity_name}</p>
                 ) : null}
+              </div>
 
-                <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-                  <div className="grid gap-5 md:grid-cols-2">
-                    <div>
-                      <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
-                        Nama Mahasiswa
-                        <RequiredMark />
-                      </label>
-                      <input
-                        value={data.student_name}
-                        onChange={(event) =>
-                          setData('student_name', event.target.value)
-                        }
-                        type="text"
-                        required
-                        className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
-                      />
-                      {errors.student_name ? (
-                        <p className="mt-2 text-xs text-red-600">{errors.student_name}</p>
-                      ) : null}
-                    </div>
+              <div className="rounded-2xl border border-[var(--public-border)] bg-[var(--public-surface-soft)] p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-[var(--public-primary-hover)]">
+                    Slot Ruangan
+                    <RequiredMark />
+                  </p>
+                  <button
+                    type="button"
+                    onClick={addSlotRow}
+                    className="rounded-xl bg-[var(--public-primary-hover)] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-95"
+                  >
+                    Tambah Slot
+                  </button>
+                </div>
 
-                    <div>
-                      <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
-                        NIM
-                        <RequiredMark />
-                      </label>
-                      <input
-                        value={data.nim}
-                        onChange={(event) => setData('nim', event.target.value)}
-                        type="text"
-                        required
-                        className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
-                      />
-                      {errors.nim ? <p className="mt-2 text-xs text-red-600">{errors.nim}</p> : null}
-                    </div>
-
-                    <div>
-                      <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
-                        Program Studi
-                        <RequiredMark />
-                      </label>
-                      <select
-                        value={data.study_program}
-                        onChange={(event) => setData('study_program', event.target.value)}
-                        required
-                        className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
-                      >
-                        <option value="">Pilih Program Studi</option>
-                        {studyPrograms.map((program) => (
-                          <option key={program} value={program}>
-                            {program}
-                          </option>
-                        ))}
-                      </select>
-                      {errors.study_program ? (
-                        <p className="mt-2 text-xs text-red-600">{errors.study_program}</p>
-                      ) : null}
-                    </div>
-
-                    <div>
-                      <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
-                        Nomor WhatsApp
-                        <RequiredMark />
-                      </label>
-                      <input
-                        value={data.phone_number}
-                        onChange={(event) => setData('phone_number', event.target.value)}
-                        type="tel"
-                        required
-                        className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
-                      />
-                      {errors.phone_number ? (
-                        <p className="mt-2 text-xs text-red-600">{errors.phone_number}</p>
-                      ) : null}
-                    </div>
-
-                    <div>
-                      <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
-                        Unit / Organisasi
-                        <RequiredMark />
-                      </label>
-                      <input
-                        value={data.unit}
-                        onChange={(event) => setData('unit', event.target.value)}
-                        type="text"
-                        required
-                        className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
-                      />
-                      {errors.unit ? <p className="mt-2 text-xs text-red-600">{errors.unit}</p> : null}
-                    </div>
-
-                    <div>
-                      <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
-                        Jumlah Peserta
-                        <RequiredMark />
-                      </label>
-                      <input
-                        value={data.number_of_participants}
-                        onChange={(event) => setData('number_of_participants', event.target.value)}
-                        type="number"
-                        min={1}
-                        required
-                        className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
-                      />
-                      {errors.number_of_participants ? (
-                        <p className="mt-2 text-xs text-red-600">{errors.number_of_participants}</p>
-                      ) : null}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
-                      Nama Kegiatan
-                      <RequiredMark />
-                    </label>
-                    <textarea
-                      value={data.activity_name}
-                      onChange={(event) => setData('activity_name', event.target.value)}
-                      rows={3}
-                      required
-                      className="w-full rounded-2xl border border-[var(--public-border)] px-5 py-3 text-sm"
-                    />
-                    {errors.activity_name ? (
-                      <p className="mt-2 text-xs text-red-600">{errors.activity_name}</p>
-                    ) : null}
-                  </div>
-
-                  <div className="rounded-2xl border border-[var(--public-border)] bg-[var(--public-surface-soft)] p-4 sm:p-5">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-semibold text-[var(--public-primary-hover)]">
-                        Slot Ruangan
-                        <RequiredMark />
-                      </p>
-                      <button
-                        type="button"
-                        onClick={addSlotRow}
-                        className="rounded-xl bg-[var(--public-primary-hover)] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-95"
-                      >
-                        Tambah Slot
-                      </button>
-                    </div>
-
-                    <div className="mt-4 space-y-3">
-                      {data.booking_slots.map((slot, slotIndex) => (
-                        <div
-                          key={`slot-${slotIndex}`}
-                          className="grid gap-3 rounded-2xl border border-[var(--public-border)] bg-white p-4 md:grid-cols-[1fr_0.8fr_0.8fr_auto]"
-                        >
-                          <div>
-                            <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.1em] text-[var(--public-text-muted)]">
-                              Ruangan
-                            </label>
-                            <select
-                              value={slot.room_id}
-                              onChange={(event) =>
-                                updateSlotRow(slotIndex, 'room_id', event.target.value)
-                              }
-                              required
-                              className="w-full rounded-xl border border-[var(--public-border)] px-4 py-2 text-sm"
-                            >
-                              <option value="">Pilih Ruangan</option>
-                              {rooms.map((room) => (
-                                <option key={room.id} value={room.id}>
-                                  {room.name} (Kapasitas {room.capacity})
-                                </option>
-                              ))}
-                            </select>
-                            {formErrors[`booking_slots.${slotIndex}.room_id`] ? (
-                              <p className="mt-2 text-xs text-red-600">
-                                {formErrors[`booking_slots.${slotIndex}.room_id`]}
-                              </p>
-                            ) : null}
-                          </div>
-
-                          <div>
-                            <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.1em] text-[var(--public-text-muted)]">
-                              Jam Mulai
-                            </label>
-                            <input
-                              value={slot.start_time}
-                              onChange={(event) =>
-                                updateSlotRow(slotIndex, 'start_time', event.target.value)
-                              }
-                              type="time"
-                              required
-                              className="w-full rounded-xl border border-[var(--public-border)] px-4 py-2 text-sm"
-                            />
-                            {formErrors[`booking_slots.${slotIndex}.start_time`] ? (
-                              <p className="mt-2 text-xs text-red-600">
-                                {formErrors[`booking_slots.${slotIndex}.start_time`]}
-                              </p>
-                            ) : null}
-                          </div>
-
-                          <div>
-                            <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.1em] text-[var(--public-text-muted)]">
-                              Jam Selesai
-                            </label>
-                            <input
-                              value={slot.end_time}
-                              onChange={(event) =>
-                                updateSlotRow(slotIndex, 'end_time', event.target.value)
-                              }
-                              type="time"
-                              required
-                              className="w-full rounded-xl border border-[var(--public-border)] px-4 py-2 text-sm"
-                            />
-                            {formErrors[`booking_slots.${slotIndex}.end_time`] ? (
-                              <p className="mt-2 text-xs text-red-600">
-                                {formErrors[`booking_slots.${slotIndex}.end_time`]}
-                              </p>
-                            ) : null}
-                          </div>
-
-                          <div className="flex items-end">
-                            <button
-                              type="button"
-                              onClick={() => removeSlotRow(slotIndex)}
-                              className="w-full rounded-xl border border-red-200 px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50"
-                              disabled={data.booking_slots.length <= 1}
-                            >
-                              Hapus
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
-                      Dokumen Pendukung
-                      <RequiredMark />
-                    </label>
-                    <input
-                      onChange={(event) =>
-                        setData('document', event.target.files?.[0] ?? null)
-                      }
-                      type="file"
-                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                      required
-                      className="w-full rounded-2xl border border-[var(--public-border)] bg-white px-5 py-3 text-sm file:mr-4 file:rounded-lg file:border-0 file:bg-[var(--public-primary-hover)] file:px-4 file:py-2 file:text-white"
-                    />
-                    {errors.document ? (
-                      <p className="mt-2 text-xs text-red-600">{errors.document}</p>
-                    ) : null}
-                  </div>
-
-                  <div className="flex justify-end">
-                    <button
-                      type="submit"
-                      disabled={processing || localConflicts.length > 0}
-                      className="rounded-2xl bg-[var(--public-accent)] px-10 py-4 text-base font-semibold text-[var(--public-primary-hover)] shadow-[0_10px_22px_rgba(244,196,48,0.28)] transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-70"
+                <div className="mt-4 space-y-3">
+                  {data.booking_slots.map((slot, slotIndex) => (
+                    <div
+                      key={`slot-${slotIndex}`}
+                      className="grid gap-3 rounded-2xl border border-[var(--public-border)] bg-white p-4 md:grid-cols-[1fr_0.8fr_0.8fr_auto]"
                     >
-                      {processing ? 'Mengirim...' : 'Ajukan Peminjaman'}
-                    </button>
-                  </div>
-                </form>
-              </>
-            )}
+                      <div>
+                        <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.1em] text-[var(--public-text-muted)]">
+                          Ruangan
+                        </label>
+                        <select
+                          value={slot.room_id}
+                          onChange={(event) =>
+                            updateSlotRow(slotIndex, 'room_id', event.target.value)
+                          }
+                          required
+                          className="w-full rounded-xl border border-[var(--public-border)] px-4 py-2 text-sm"
+                        >
+                          <option value="">Pilih Ruangan</option>
+                          {rooms.map((room) => (
+                            <option key={room.id} value={room.id}>
+                              {room.name} (Kapasitas {room.capacity})
+                            </option>
+                          ))}
+                        </select>
+                        {formErrors[`booking_slots.${slotIndex}.room_id`] ? (
+                          <p className="mt-2 text-xs text-red-600">
+                            {formErrors[`booking_slots.${slotIndex}.room_id`]}
+                          </p>
+                        ) : null}
+                      </div>
+
+                      <div>
+                        <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.1em] text-[var(--public-text-muted)]">
+                          Jam Mulai
+                        </label>
+                        <input
+                          value={slot.start_time}
+                          onChange={(event) =>
+                            updateSlotRow(slotIndex, 'start_time', event.target.value)
+                          }
+                          type="time"
+                          required
+                          className="w-full rounded-xl border border-[var(--public-border)] px-4 py-2 text-sm"
+                        />
+                        {formErrors[`booking_slots.${slotIndex}.start_time`] ? (
+                          <p className="mt-2 text-xs text-red-600">
+                            {formErrors[`booking_slots.${slotIndex}.start_time`]}
+                          </p>
+                        ) : null}
+                      </div>
+
+                      <div>
+                        <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.1em] text-[var(--public-text-muted)]">
+                          Jam Selesai
+                        </label>
+                        <input
+                          value={slot.end_time}
+                          onChange={(event) =>
+                            updateSlotRow(slotIndex, 'end_time', event.target.value)
+                          }
+                          type="time"
+                          required
+                          className="w-full rounded-xl border border-[var(--public-border)] px-4 py-2 text-sm"
+                        />
+                        {formErrors[`booking_slots.${slotIndex}.end_time`] ? (
+                          <p className="mt-2 text-xs text-red-600">
+                            {formErrors[`booking_slots.${slotIndex}.end_time`]}
+                          </p>
+                        ) : null}
+                      </div>
+
+                      <div className="flex items-end">
+                        <button
+                          type="button"
+                          onClick={() => removeSlotRow(slotIndex)}
+                          className="w-full rounded-xl border border-red-200 px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50"
+                          disabled={data.booking_slots.length <= 1}
+                        >
+                          Hapus
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-[var(--public-text-muted)]">
+                  Dokumen Pendukung
+                  <RequiredMark />
+                </label>
+                <input
+                  onChange={(event) =>
+                    setData('document', event.target.files?.[0] ?? null)
+                  }
+                  type="file"
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                  required
+                  className="w-full rounded-2xl border border-[var(--public-border)] bg-white px-4 py-2.5 text-sm file:mr-4 file:rounded-lg file:border-0 file:bg-[var(--public-primary-hover)] file:px-4 file:py-2 file:text-white"
+                />
+                {errors.document ? (
+                  <p className="mt-2 text-xs text-red-600">{errors.document}</p>
+                ) : null}
+              </div>
+
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsFormModalOpen(false)}
+                  className="rounded-2xl border border-[var(--public-border)] px-6 py-3 text-sm font-semibold text-[var(--public-text-muted)] transition hover:bg-[var(--public-surface-soft)]"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={processing || localConflicts.length > 0}
+                  className="rounded-2xl bg-[var(--public-accent)] px-10 py-4 text-base font-semibold text-[var(--public-primary-hover)] shadow-[0_10px_22px_rgba(244,196,48,0.28)] transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  {processing ? 'Mengirim...' : 'Ajukan Peminjaman'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
-      </section>
+      ) : null}
     </AppLayout>
   );
 };
