@@ -4,6 +4,7 @@ namespace App\Filament\Resources\RoomUsageRequests\Tables;
 
 use App\Filament\Support\AdminAccess;
 use App\Filament\Support\LetterTableActions;
+use App\Filament\Support\LetterTableColumns;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -60,6 +61,7 @@ class RoomUsageRequestsTable
                         default => 'warning',
                     })
                     ->sortable(),
+                LetterTableColumns::evidence(),
                 TextColumn::make('letter_number')
                     ->label('Nomor Surat')
                     ->placeholder('-')

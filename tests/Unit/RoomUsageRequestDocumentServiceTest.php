@@ -40,7 +40,7 @@ class RoomUsageRequestDocumentServiceTest extends TestCase
         );
     }
 
-    public function test_room_usage_request_document_payload_lists_all_booking_dates_and_slots(): void
+    public function test_room_usage_request_document_payload_builds_date_range_for_multi_day_bookings(): void
     {
         $roomA = Room::query()->create([
             'name' => 'Lab Komputer 1',
@@ -95,10 +95,56 @@ class RoomUsageRequestDocumentServiceTest extends TestCase
 
         $payload = $service->exposeBuildTemplatePayload($record->load('slots.room'));
 
-        $this->assertSame('30 April 2026, 02 Mei 2026', $payload['tanggal_penggunaan']);
+        $this->assertSame('30 April 2026 - 02 Mei 2026', $payload['tanggal_penggunaan']);
         $this->assertSame(
             '30 April 2026 - Lab Komputer 1 (09:00-11:00), 02 Mei 2026 - Lab Komputer 2 (13:00-15:00)',
             $payload['detail_ruangan'],
         );
+        $this->assertSame('09:00-11:00, 13:00-15:00', $payload['waktu_penggunaan']);
+    }
+
+    public function test_room_usage_request_document_payload_keeps_single_date_for_non_recurring_booking(): void
+    {
+        $room = Room::query()->create([
+            'name' => 'H46',
+            'capacity' => 50,
+        ]);
+
+        $record = RoomUsageRequest::query()->create([
+            'student_name' => 'Tegar Restu Indrawan',
+            'nim' => 'D200240111',
+            'study_program' => 'Teknik Mesin',
+            'phone_number' => '081645439373',
+            'unit' => 'KMTM',
+            'activity_name' => 'Rapat pembagian LKTIN',
+            'start_at' => '2026-03-13 15:00:00',
+            'end_at' => '2026-03-13 23:00:00',
+            'room_id' => $room->id,
+            'room_name' => 'H46',
+            'number_of_participants' => 50,
+            'status' => 'PENDING',
+            'document' => 'room-usage-requests/bukti.pdf',
+        ]);
+
+        $record->slots()->create([
+            'room_id' => $room->id,
+            'room_name_snapshot' => 'H46',
+            'booking_date' => '2026-03-13',
+            'start_at' => '2026-03-13 15:00:00',
+            'end_at' => '2026-03-13 23:00:00',
+        ]);
+
+        $service = new class extends RoomUsageRequestDocumentService
+        {
+            public function exposeBuildTemplatePayload(RoomUsageRequest $letter): array
+            {
+                return $this->buildTemplatePayload($letter);
+            }
+        };
+
+        $payload = $service->exposeBuildTemplatePayload($record->load('slots.room'));
+
+        $this->assertSame('13 Maret 2026', $payload['tanggal_penggunaan']);
+        $this->assertSame('15:00-23:00', $payload['waktu_penggunaan']);
     }
 }

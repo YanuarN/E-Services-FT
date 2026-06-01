@@ -4,6 +4,7 @@ use App\Http\Controllers\DocumentVerificationController;
 use App\Http\Controllers\PublicSubmissionController;
 use App\Models\LetterTemplate;
 use App\Models\Room;
+use App\Models\RoomUsageRequest;
 use App\Support\PublicServiceCatalog;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
@@ -84,5 +85,30 @@ Route::middleware(['auth'])
                 $disk->path($record->document_path),
                 "template-{$record->letter_type}.docx",
             );
+        })->name('download');
+    });
+
+Route::middleware(['auth'])
+    ->prefix('admin')
+    ->name('admin.room-usage-requests.evidence.')
+    ->group(function (): void {
+        Route::get('/room-usage-requests/{record}/evidence', function (RoomUsageRequest $record) {
+            abort_if(blank($record->document), 404);
+
+            $disk = Storage::disk('local');
+            abort_unless($disk->exists($record->document), 404);
+
+            $mimeType = $disk->mimeType($record->document) ?: 'application/octet-stream';
+            $filename = basename((string) $record->document);
+            $isInline = str_starts_with($mimeType, 'image/') || $mimeType === 'application/pdf';
+
+            return response()->file($disk->path($record->document), [
+                'Content-Type' => $mimeType,
+                'Content-Disposition' => sprintf(
+                    '%s; filename="%s"',
+                    $isInline ? 'inline' : 'attachment',
+                    $filename,
+                ),
+            ]);
         })->name('download');
     });

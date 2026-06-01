@@ -85,6 +85,30 @@ class RoomUsageRequestDocumentService extends UniversalLetterService
 
     private function buildUsageTime(RoomUsageRequest $letter): string
     {
+        $letter->loadMissing('slots.room');
+
+        if ($letter->slots->isNotEmpty()) {
+            $timeRanges = $letter->slots
+                ->sortBy('start_at')
+                ->map(function ($slot): string {
+                    $start = $this->formatTime($slot->start_at);
+                    $end = $this->formatTime($slot->end_at);
+
+                    if ($start === '' || $end === '') {
+                        return '';
+                    }
+
+                    return "{$start}-{$end}";
+                })
+                ->filter()
+                ->unique()
+                ->values();
+
+            if ($timeRanges->isNotEmpty()) {
+                return $timeRanges->join(', ');
+            }
+        }
+
         return trim(implode('-', array_filter([
             $this->formatTime($letter->start_at),
             $this->formatTime($letter->end_at),
@@ -137,13 +161,25 @@ class RoomUsageRequestDocumentService extends UniversalLetterService
             return $this->formatDate($letter->start_at);
         }
 
-        return $letter->slots
+        $dates = $letter->slots
             ->pluck('booking_date')
             ->filter()
             ->sort()
-            ->map(fn ($date): string => $this->formatDate($date))
             ->unique()
-            ->values()
-            ->join(', ');
+            ->values();
+
+        if ($dates->isEmpty()) {
+            return $this->formatDate($letter->start_at);
+        }
+
+        if ($dates->count() === 1) {
+            return $this->formatDate($dates->first());
+        }
+
+        return sprintf(
+            '%s - %s',
+            $this->formatDate($dates->first()),
+            $this->formatDate($dates->last()),
+        );
     }
 }
