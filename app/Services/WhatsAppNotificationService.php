@@ -240,7 +240,11 @@ class WhatsAppNotificationService
 
     private static function getAdminPhoneNumber(): ?string
     {
-        $phone = AdminWhatsappContact::query()->value('whatsapp_number');
+        $phone = AdminWhatsappContact::query()
+            ->whereNotNull('whatsapp_number')
+            ->where('whatsapp_number', '!=', '')
+            ->orderBy('id')
+            ->value('whatsapp_number');
 
         if (! is_string($phone)) {
             return null;
@@ -272,7 +276,7 @@ class WhatsAppNotificationService
         $record->loadMissing('slots.room');
         $roomName = trim((string) ($record->resolved_room_name ?: 'Ruang'));
         $submittedDate = self::formatRecordDate(now());
-        $bookingDate = self::formatRecordDate($record->start_at);
+        $bookingDate = self::buildRoomBookingDateLabel($record);
         $agenda = trim((string) ($record->activity_name ?? '-'));
         $slotDetails = self::buildRoomSlotLines($record);
 
@@ -309,7 +313,37 @@ class WhatsAppNotificationService
                 return "{$roomName} ({$start}-{$end})";
             })
             ->values()
+            ->unique()
             ->join(', ');
+    }
+
+    private static function buildRoomBookingDateLabel(RoomUsageRequest $record): string
+    {
+        if ($record->slots->isEmpty()) {
+            return self::formatRecordDate($record->start_at);
+        }
+
+        $bookingDates = $record->slots
+            ->pluck('booking_date')
+            ->filter()
+            ->sort()
+            ->map(fn ($date): string => self::formatRecordDate($date))
+            ->unique()
+            ->values();
+
+        if ($bookingDates->isEmpty()) {
+            return self::formatRecordDate($record->start_at);
+        }
+
+        if ($bookingDates->count() === 1) {
+            return (string) $bookingDates->first();
+        }
+
+        return sprintf(
+            '%s - %s',
+            $bookingDates->first(),
+            $bookingDates->last(),
+        );
     }
 
     private static function formatRecordDate(null|string|CarbonInterface $value): string

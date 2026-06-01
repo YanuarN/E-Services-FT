@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasPublicToken;
+use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -77,17 +78,29 @@ class RoomUsageRequest extends Model
             $this->loadMissing('slots.room');
         }
 
+        $hasMultipleBookingDates = $this->slots
+            ->pluck('booking_date')
+            ->filter()
+            ->map(fn (CarbonInterface|string $date): string => $this->formatDateValue($date, 'Y-m-d'))
+            ->unique()
+            ->count() > 1;
+
         return $this->slots
             ->sortBy('start_at')
-            ->map(function (RoomUsageRequestSlot $slot): string {
+            ->map(function (RoomUsageRequestSlot $slot) use ($hasMultipleBookingDates): string {
                 $roomName = trim((string) ($slot->room_name_snapshot ?: ($slot->room?->name ?? 'Ruang')));
-
-                return sprintf(
-                    '%s (%s-%s)',
-                    $roomName,
+                $dateLabel = $this->formatDateValue($slot->booking_date, 'd M Y');
+                $timeLabel = sprintf(
+                    '%s-%s',
                     $this->formatTime($slot->start_at),
                     $this->formatTime($slot->end_at),
                 );
+
+                if ($hasMultipleBookingDates && $dateLabel !== '-') {
+                    return "{$dateLabel} - {$roomName} ({$timeLabel})";
+                }
+
+                return "{$roomName} ({$timeLabel})";
             })
             ->values()
             ->join(', ');
@@ -100,5 +113,14 @@ class RoomUsageRequest extends Model
         }
 
         return '-';
+    }
+
+    private function formatDateValue(CarbonInterface|string|null $value, string $format): string
+    {
+        if ($value instanceof CarbonInterface) {
+            return $value->format($format);
+        }
+
+        return filled($value) ? Carbon::parse($value)->format($format) : '-';
     }
 }

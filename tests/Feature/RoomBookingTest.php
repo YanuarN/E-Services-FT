@@ -166,6 +166,67 @@ class RoomBookingTest extends TestCase
         Carbon::setTestNow();
     }
 
+    public function test_public_booking_stores_recurring_slots_for_each_selected_date(): void
+    {
+        Storage::fake('local');
+        Carbon::setTestNow('2026-04-20 08:00:00');
+
+        $roomA = Room::query()->create([
+            'name' => 'H.4.1',
+            'capacity' => 60,
+        ]);
+
+        $roomB = Room::query()->create([
+            'name' => 'H.4.2',
+            'capacity' => 40,
+        ]);
+
+        $response = $this->post(route('booking.store'), [
+            'student_name' => 'Nadia Putri',
+            'nim' => '221000003',
+            'study_program' => 'Teknik Kimia',
+            'phone_number' => '081200000003',
+            'unit' => 'HMJ',
+            'activity_name' => 'Diskusi organisasi',
+            'number_of_participants' => 20,
+            'selected_date' => '2026-04-25',
+            'is_recurring' => true,
+            'repeat_dates' => ['2026-04-27', '2026-04-29'],
+            'booking_slots' => [
+                [
+                    'room_id' => $roomA->id,
+                    'start_time' => '08:00',
+                    'end_time' => '09:30',
+                ],
+                [
+                    'room_id' => $roomB->id,
+                    'start_time' => '10:00',
+                    'end_time' => '12:00',
+                ],
+            ],
+            'document' => UploadedFile::fake()->create('surat.pdf', 200, 'application/pdf'),
+        ]);
+
+        $response->assertRedirect(route('booking'));
+        $this->assertDatabaseCount('room_usage_requests', 1);
+        $this->assertDatabaseCount('room_usage_request_slots', 6);
+
+        $requestRecord = RoomUsageRequest::query()->with('slots')->firstOrFail();
+        $this->assertSame('2026-04-25 08:00:00', $requestRecord->start_at?->format('Y-m-d H:i:s'));
+        $this->assertSame('2026-04-29 12:00:00', $requestRecord->end_at?->format('Y-m-d H:i:s'));
+        $this->assertSame(
+            ['2026-04-25', '2026-04-27', '2026-04-29'],
+            $requestRecord->slots
+                ->pluck('booking_date')
+                ->map(fn (Carbon $date): string => $date->format('Y-m-d'))
+                ->unique()
+                ->values()
+                ->all(),
+        );
+
+        Carbon::setTestNow();
+    }
+
     public function test_public_booking_rejects_duplicate_slots_in_same_submission(): void
     {
         Storage::fake('local');
@@ -204,6 +265,183 @@ class RoomBookingTest extends TestCase
         $response->assertSessionHasErrors('booking_slots.1.room_id');
         $this->assertDatabaseCount('room_usage_requests', 0);
         $this->assertDatabaseCount('room_usage_request_slots', 0);
+
+        Carbon::setTestNow();
+    }
+
+    public function test_public_booking_rejects_recurring_submission_when_any_additional_date_conflicts(): void
+    {
+        Storage::fake('local');
+        Carbon::setTestNow('2026-04-20 08:00:00');
+
+        $room = Room::query()->create([
+            'name' => 'H.4.1',
+            'capacity' => 60,
+        ]);
+
+        $existingRequest = RoomUsageRequest::query()->create([
+            'student_name' => 'Siti Rahma',
+            'nim' => '221000002',
+            'study_program' => 'Teknik Sipil',
+            'phone_number' => '081200000001',
+            'unit' => 'HMTS',
+            'activity_name' => 'Seminar internal',
+            'start_at' => Carbon::parse('2026-04-27 09:00:00'),
+            'end_at' => Carbon::parse('2026-04-27 11:00:00'),
+            'room_id' => $room->id,
+            'room_name' => $room->name,
+            'number_of_participants' => 30,
+            'status' => 'APPROVED',
+            'document' => 'room-usage-requests/existing.pdf',
+        ]);
+
+        $existingRequest->slots()->create([
+            'room_id' => $room->id,
+            'room_name_snapshot' => $room->name,
+            'booking_date' => '2026-04-27',
+            'start_at' => Carbon::parse('2026-04-27 09:00:00'),
+            'end_at' => Carbon::parse('2026-04-27 11:00:00'),
+        ]);
+
+        $response = $this->from(route('booking'))->post(route('booking.store'), [
+            'student_name' => 'Budi Santoso',
+            'nim' => '221000001',
+            'study_program' => 'Teknik Informatika',
+            'phone_number' => '081234567890',
+            'unit' => 'BEM FT',
+            'activity_name' => 'Rapat koordinasi',
+            'number_of_participants' => 25,
+            'selected_date' => '2026-04-25',
+            'is_recurring' => true,
+            'repeat_dates' => ['2026-04-27'],
+            'booking_slots' => [
+                [
+                    'room_id' => $room->id,
+                    'start_time' => '10:00',
+                    'end_time' => '12:00',
+                ],
+            ],
+            'document' => UploadedFile::fake()->create('surat.pdf', 200, 'application/pdf'),
+        ]);
+
+        $response->assertRedirect(route('booking'));
+        $response->assertSessionHasErrors('booking_slots');
+        $this->assertDatabaseCount('room_usage_requests', 1);
+        $this->assertDatabaseCount('room_usage_request_slots', 1);
+
+        Carbon::setTestNow();
+    }
+
+    public function test_public_booking_requires_additional_dates_when_recurring_is_enabled(): void
+    {
+        Storage::fake('local');
+        Carbon::setTestNow('2026-04-20 08:00:00');
+
+        $room = Room::query()->create([
+            'name' => 'H.4.1',
+            'capacity' => 60,
+        ]);
+
+        $response = $this->from(route('booking'))->post(route('booking.store'), [
+            'student_name' => 'Budi Santoso',
+            'nim' => '221000001',
+            'study_program' => 'Teknik Informatika',
+            'phone_number' => '081234567890',
+            'unit' => 'BEM FT',
+            'activity_name' => 'Rapat koordinasi',
+            'number_of_participants' => 25,
+            'selected_date' => '2026-04-25',
+            'is_recurring' => true,
+            'repeat_dates' => [],
+            'booking_slots' => [
+                [
+                    'room_id' => $room->id,
+                    'start_time' => '10:00',
+                    'end_time' => '12:00',
+                ],
+            ],
+            'document' => UploadedFile::fake()->create('surat.pdf', 200, 'application/pdf'),
+        ]);
+
+        $response->assertRedirect(route('booking'));
+        $response->assertSessionHasErrors('repeat_dates');
+        $this->assertDatabaseCount('room_usage_requests', 0);
+
+        Carbon::setTestNow();
+    }
+
+    public function test_public_booking_rejects_duplicate_recurring_dates(): void
+    {
+        Storage::fake('local');
+        Carbon::setTestNow('2026-04-20 08:00:00');
+
+        $room = Room::query()->create([
+            'name' => 'H.4.1',
+            'capacity' => 60,
+        ]);
+
+        $response = $this->from(route('booking'))->post(route('booking.store'), [
+            'student_name' => 'Budi Santoso',
+            'nim' => '221000001',
+            'study_program' => 'Teknik Informatika',
+            'phone_number' => '081234567890',
+            'unit' => 'BEM FT',
+            'activity_name' => 'Rapat koordinasi',
+            'number_of_participants' => 25,
+            'selected_date' => '2026-04-25',
+            'is_recurring' => true,
+            'repeat_dates' => ['2026-04-27', '2026-04-27'],
+            'booking_slots' => [
+                [
+                    'room_id' => $room->id,
+                    'start_time' => '10:00',
+                    'end_time' => '12:00',
+                ],
+            ],
+            'document' => UploadedFile::fake()->create('surat.pdf', 200, 'application/pdf'),
+        ]);
+
+        $response->assertRedirect(route('booking'));
+        $response->assertSessionHasErrors('repeat_dates.1');
+        $this->assertDatabaseCount('room_usage_requests', 0);
+
+        Carbon::setTestNow();
+    }
+
+    public function test_public_booking_rejects_past_recurring_dates(): void
+    {
+        Storage::fake('local');
+        Carbon::setTestNow('2026-04-20 08:00:00');
+
+        $room = Room::query()->create([
+            'name' => 'H.4.1',
+            'capacity' => 60,
+        ]);
+
+        $response = $this->from(route('booking'))->post(route('booking.store'), [
+            'student_name' => 'Budi Santoso',
+            'nim' => '221000001',
+            'study_program' => 'Teknik Informatika',
+            'phone_number' => '081234567890',
+            'unit' => 'BEM FT',
+            'activity_name' => 'Rapat koordinasi',
+            'number_of_participants' => 25,
+            'selected_date' => '2026-04-25',
+            'is_recurring' => true,
+            'repeat_dates' => ['2026-04-18'],
+            'booking_slots' => [
+                [
+                    'room_id' => $room->id,
+                    'start_time' => '10:00',
+                    'end_time' => '12:00',
+                ],
+            ],
+            'document' => UploadedFile::fake()->create('surat.pdf', 200, 'application/pdf'),
+        ]);
+
+        $response->assertRedirect(route('booking'));
+        $response->assertSessionHasErrors('repeat_dates.0');
+        $this->assertDatabaseCount('room_usage_requests', 0);
 
         Carbon::setTestNow();
     }
@@ -330,6 +568,61 @@ class RoomBookingTest extends TestCase
             ['H.4.1', 'H.4.2'],
             collect($response->json('data'))->pluck('roomName')->sort()->values()->all(),
         );
+
+        Carbon::setTestNow();
+    }
+
+    public function test_room_booking_lookup_returns_recurring_slots_for_additional_dates(): void
+    {
+        Carbon::setTestNow('2026-04-20 08:00:00');
+
+        $room = Room::query()->create([
+            'name' => 'H.4.1',
+            'capacity' => 60,
+        ]);
+
+        $requestRecord = RoomUsageRequest::query()->create([
+            'student_name' => 'Nadia Putri',
+            'nim' => '221000003',
+            'study_program' => 'Teknik Kimia',
+            'phone_number' => '081200000003',
+            'unit' => 'HMJ',
+            'activity_name' => 'Diskusi organisasi',
+            'start_at' => Carbon::parse('2026-04-25 13:00:00'),
+            'end_at' => Carbon::parse('2026-04-27 15:00:00'),
+            'room_id' => $room->id,
+            'room_name' => $room->name,
+            'number_of_participants' => 20,
+            'status' => 'PENDING',
+            'document' => 'room-usage-requests/matching.pdf',
+        ]);
+
+        $requestRecord->slots()->createMany([
+            [
+                'room_id' => $room->id,
+                'room_name_snapshot' => $room->name,
+                'booking_date' => '2026-04-25',
+                'start_at' => Carbon::parse('2026-04-25 13:00:00'),
+                'end_at' => Carbon::parse('2026-04-25 15:00:00'),
+            ],
+            [
+                'room_id' => $room->id,
+                'room_name_snapshot' => $room->name,
+                'booking_date' => '2026-04-27',
+                'start_at' => Carbon::parse('2026-04-27 13:00:00'),
+                'end_at' => Carbon::parse('2026-04-27 15:00:00'),
+            ],
+        ]);
+
+        $response = $this->getJson(route('booking.bookings.by-date', [
+            'selected_date' => '2026-04-27',
+        ]));
+
+        $response
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.roomName', 'H.4.1')
+            ->assertJsonPath('data.0.activityName', 'Diskusi organisasi');
 
         Carbon::setTestNow();
     }

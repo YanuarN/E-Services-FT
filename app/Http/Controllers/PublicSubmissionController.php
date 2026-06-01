@@ -48,6 +48,9 @@ class PublicSubmissionController extends Controller
             'activity_name' => ['required', 'string', 'max:500'],
             'number_of_participants' => ['required', 'integer', 'min:1'],
             'selected_date' => ['required', 'date', 'after_or_equal:today'],
+            'is_recurring' => ['nullable', 'boolean'],
+            'repeat_dates' => ['exclude_unless:is_recurring,true,1', 'required_if:is_recurring,true,1', 'array', 'min:1'],
+            'repeat_dates.*' => ['required', 'date', 'after_or_equal:today', 'distinct'],
             'booking_slots' => ['required', 'array', 'min:1'],
             'booking_slots.*.room_id' => ['required', 'integer', Rule::exists('rooms', 'id')],
             'booking_slots.*.start_time' => ['required', 'date_format:H:i'],
@@ -55,17 +58,22 @@ class PublicSubmissionController extends Controller
             'document' => ['required', 'file', 'mimes:pdf,doc,docx,jpg,jpeg,png', 'max:10240'],
         ]);
 
-        $bookingDate = Carbon::parse($validated['selected_date'], config('app.timezone'))->toDateString();
+        $bookingDates = $this->buildBookingDates(
+            $validated['selected_date'],
+            $validated['repeat_dates'] ?? [],
+            (bool) ($validated['is_recurring'] ?? false),
+        );
         $roomMap = Room::query()
             ->whereIn('id', collect($validated['booking_slots'])->pluck('room_id')->unique()->values())
             ->pluck('name', 'id');
-        $slots = $this->normalizeBookingSlots($validated['booking_slots'], $bookingDate, $roomMap->all());
-        $conflicts = $this->findConflictedSlots($slots, $bookingDate);
+        $slots = $this->normalizeBookingSlots($validated['booking_slots'], $bookingDates, $roomMap->all());
+        $conflicts = $this->findConflictedSlots($slots);
 
         if ($conflicts->isNotEmpty()) {
             $conflictSummary = $conflicts
                 ->map(fn (array $slot): string => sprintf(
-                    '%s (%s-%s)',
+                    '%s - %s (%s-%s)',
+                    Carbon::parse($slot['booking_date'], config('app.timezone'))->locale('id')->translatedFormat('d M Y'),
                     $slot['room_name'],
                     $slot['start_time'],
                     $slot['end_time'],
@@ -137,7 +145,7 @@ class PublicSubmissionController extends Controller
                 'room:id,name',
                 'roomUsageRequest:id,student_name,activity_name,unit,status',
             ])
-            ->where('booking_date', $bookingDate)
+            ->whereDate('booking_date', $bookingDate)
             ->whereHas('roomUsageRequest', function ($query): void {
                 $query->whereIn('status', ['PENDING', 'APPROVED']);
             })
@@ -168,49 +176,78 @@ class PublicSubmissionController extends Controller
     }
 
     /**
+     * @param  array<int, string>  $repeatDates
+     * @return array<int, string>
+     *
+     * @throws ValidationException
+     */
+    private function buildBookingDates(string $selectedDate, array $repeatDates, bool $isRecurring): array
+    {
+        $timezone = config('app.timezone');
+        $bookingDates = collect([$selectedDate])
+            ->merge($repeatDates)
+            ->map(fn (string $date): string => Carbon::parse($date, $timezone)->toDateString())
+            ->unique()
+            ->sort()
+            ->values();
+
+        if ($isRecurring && $bookingDates->count() < 2) {
+            throw ValidationException::withMessages([
+                'repeat_dates' => 'Tambahkan minimal satu tanggal berbeda untuk booking berulang.',
+            ]);
+        }
+
+        return $bookingDates->all();
+    }
+
+    /**
      * @param  array<int, array{room_id:int, start_time:string, end_time:string}>  $rawSlots
+     * @param  array<int, string>  $bookingDates
      * @param  array<int, string>  $roomMap
      * @return Collection<int, array{room_id:int, room_name:string, booking_date:string, start_at:Carbon, end_at:Carbon}>
      *
      * @throws ValidationException
      */
-    private function normalizeBookingSlots(array $rawSlots, string $bookingDate, array $roomMap): Collection
+    private function normalizeBookingSlots(array $rawSlots, array $bookingDates, array $roomMap): Collection
     {
         $timezone = config('app.timezone');
         $slots = collect();
         $duplicateKeys = [];
 
-        foreach ($rawSlots as $index => $slot) {
-            $startAt = Carbon::createFromFormat('Y-m-d H:i', "{$bookingDate} {$slot['start_time']}", $timezone);
-            $endAt = Carbon::createFromFormat('Y-m-d H:i', "{$bookingDate} {$slot['end_time']}", $timezone);
+        foreach ($bookingDates as $bookingDate) {
+            foreach ($rawSlots as $index => $slot) {
+                $startAt = Carbon::createFromFormat('Y-m-d H:i', "{$bookingDate} {$slot['start_time']}", $timezone);
+                $endAt = Carbon::createFromFormat('Y-m-d H:i', "{$bookingDate} {$slot['end_time']}", $timezone);
 
-            if ($endAt->lessThanOrEqualTo($startAt)) {
-                throw ValidationException::withMessages([
-                    "booking_slots.{$index}.end_time" => 'Jam selesai harus lebih besar dari jam mulai.',
+                if ($endAt->lessThanOrEqualTo($startAt)) {
+                    throw ValidationException::withMessages([
+                        "booking_slots.{$index}.end_time" => 'Jam selesai harus lebih besar dari jam mulai.',
+                    ]);
+                }
+
+                $duplicateKey = implode('|', [
+                    $bookingDate,
+                    $slot['room_id'],
+                    $startAt->format('Y-m-d H:i:s'),
+                    $endAt->format('Y-m-d H:i:s'),
+                ]);
+
+                if (isset($duplicateKeys[$duplicateKey])) {
+                    throw ValidationException::withMessages([
+                        "booking_slots.{$index}.room_id" => 'Slot ruangan duplikat tidak diperbolehkan.',
+                    ]);
+                }
+
+                $duplicateKeys[$duplicateKey] = true;
+
+                $slots->push([
+                    'room_id' => (int) $slot['room_id'],
+                    'room_name' => (string) ($roomMap[(int) $slot['room_id']] ?? 'Ruang'),
+                    'booking_date' => $bookingDate,
+                    'start_at' => $startAt,
+                    'end_at' => $endAt,
                 ]);
             }
-
-            $duplicateKey = implode('|', [
-                $slot['room_id'],
-                $startAt->format('Y-m-d H:i:s'),
-                $endAt->format('Y-m-d H:i:s'),
-            ]);
-
-            if (isset($duplicateKeys[$duplicateKey])) {
-                throw ValidationException::withMessages([
-                    "booking_slots.{$index}.room_id" => 'Slot ruangan duplikat tidak diperbolehkan.',
-                ]);
-            }
-
-            $duplicateKeys[$duplicateKey] = true;
-
-            $slots->push([
-                'room_id' => (int) $slot['room_id'],
-                'room_name' => (string) ($roomMap[(int) $slot['room_id']] ?? 'Ruang'),
-                'booking_date' => $bookingDate,
-                'start_at' => $startAt,
-                'end_at' => $endAt,
-            ]);
         }
 
         return $slots;
@@ -218,9 +255,9 @@ class PublicSubmissionController extends Controller
 
     /**
      * @param  Collection<int, array{room_id:int, room_name:string, booking_date:string, start_at:Carbon, end_at:Carbon}>  $slots
-     * @return Collection<int, array{room_id:int, room_name:string, start_time:string, end_time:string}>
+     * @return Collection<int, array{room_id:int, room_name:string, booking_date:string, start_time:string, end_time:string}>
      */
-    private function findConflictedSlots(Collection $slots, string $bookingDate): Collection
+    private function findConflictedSlots(Collection $slots): Collection
     {
         if ($slots->isEmpty()) {
             return collect();
@@ -234,11 +271,11 @@ class PublicSubmissionController extends Controller
                 'room_usage_request_slots.room_usage_request_id',
             )
             ->whereIn('room_usage_requests.status', ['PENDING', 'APPROVED'])
-            ->where('room_usage_request_slots.booking_date', $bookingDate)
             ->where(function ($query) use ($slots): void {
                 foreach ($slots as $slot) {
                     $query->orWhere(function ($innerQuery) use ($slot): void {
                         $innerQuery
+                            ->whereDate('room_usage_request_slots.booking_date', $slot['booking_date'])
                             ->where('room_usage_request_slots.room_id', $slot['room_id'])
                             ->where('room_usage_request_slots.start_at', '<', $slot['end_at'])
                             ->where('room_usage_request_slots.end_at', '>', $slot['start_at']);
@@ -247,6 +284,7 @@ class PublicSubmissionController extends Controller
             })
             ->get([
                 'room_usage_request_slots.room_id',
+                'room_usage_request_slots.booking_date',
                 'room_usage_request_slots.room_name_snapshot',
                 'room_usage_request_slots.start_at',
                 'room_usage_request_slots.end_at',
@@ -255,6 +293,7 @@ class PublicSubmissionController extends Controller
         return $conflicts
             ->map(fn ($conflict): array => [
                 'room_id' => (int) $conflict->room_id,
+                'booking_date' => Carbon::parse($conflict->booking_date, config('app.timezone'))->toDateString(),
                 'room_name' => (string) ($conflict->room_name_snapshot ?? 'Ruang'),
                 'start_time' => Carbon::parse($conflict->start_at, config('app.timezone'))->format('H:i'),
                 'end_time' => Carbon::parse($conflict->end_at, config('app.timezone'))->format('H:i'),

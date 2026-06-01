@@ -74,10 +74,11 @@ const BookingCalendar = ({
     const isOutside = !isSameMonth(date, view.currentStart);
     const isPastDate = isBefore(startOfDay(date), today);
     const isSelected = selectedDate ? isSameDay(date, selectedDate) : false;
+    const isSelectable = !isPastDate && !isOutside;
 
     return [
       'booking-fc-day',
-      'booking-fc-day-idle',
+      isSelectable ? 'booking-fc-day-available' : 'booking-fc-day-idle',
       isPastDate ? 'booking-fc-day-disabled' : '',
       isSelected ? 'booking-fc-day-selected' : '',
       isOutside ? 'booking-fc-day-outside' : '',

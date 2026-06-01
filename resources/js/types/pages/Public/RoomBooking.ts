@@ -10,6 +10,7 @@ export type RoomBookingSharedPageProps = {
     success?: string;
     whatsappUrl?: string | null;
     roomBookingConflicts?: {
+      booking_date: string;
       room_id: number;
       room_name: string;
       start_time: string;

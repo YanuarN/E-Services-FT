@@ -110,13 +110,15 @@ class WhatsAppNotificationServiceTest extends TestCase
         $record->setRelation('slots', collect([
             new RoomUsageRequestSlot([
                 'room_name_snapshot' => 'Lab Komputer 1',
+                'booking_date' => '2026-04-30',
                 'start_at' => '2026-04-30 09:00:00',
                 'end_at' => '2026-04-30 11:00:00',
             ]),
             new RoomUsageRequestSlot([
                 'room_name_snapshot' => 'Lab Komputer 2',
-                'start_at' => '2026-04-30 13:00:00',
-                'end_at' => '2026-04-30 15:00:00',
+                'booking_date' => '2026-05-02',
+                'start_at' => '2026-05-02 13:00:00',
+                'end_at' => '2026-05-02 15:00:00',
             ]),
         ]));
 
@@ -129,6 +131,6 @@ class WhatsAppNotificationServiceTest extends TestCase
         $this->assertStringContainsString('Ruang: Lab Komputer 1', $decodedUrl);
         $this->assertStringContainsString('Detail Ruang/Jam: Lab Komputer 1 (09:00-11:00), Lab Komputer 2 (13:00-15:00)', $decodedUrl);
         $this->assertStringContainsString('Agenda: Rapat Panitia', $decodedUrl);
-        $this->assertStringContainsString('Tanggal Peminjaman: 30 April 2026', $decodedUrl);
+        $this->assertStringContainsString('Tanggal Peminjaman: 30 April 2026 - 02 Mei 2026', $decodedUrl);
     }
 }

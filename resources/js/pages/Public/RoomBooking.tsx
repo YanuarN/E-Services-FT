@@ -1,5 +1,12 @@
 import { useForm, usePage } from '@inertiajs/react';
-import { format, isBefore, parseISO, startOfDay, startOfMonth } from 'date-fns';
+import {
+  format,
+  isBefore,
+  isValid,
+  parseISO,
+  startOfDay,
+  startOfMonth,
+} from 'date-fns';
 import type { FormEvent } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -21,6 +28,14 @@ type BookingSlotForm = {
   end_time: string;
 };
 
+type LocalBookingConflict = {
+  bookingDate: string;
+  index: number;
+  roomLabel: string;
+  startTime: string;
+  endTime: string;
+};
+
 const statusLabelMap = {
   APPROVED: 'Disetujui',
   PENDING: 'Menunggu',
@@ -38,6 +53,20 @@ const RequiredMark = () => (
     *
   </span>
 );
+
+const normalizeDateValue = (value: string): string | null => {
+  if (!value) {
+    return null;
+  }
+
+  const parsedDate = parseISO(value);
+
+  if (!isValid(parsedDate)) {
+    return null;
+  }
+
+  return format(parsedDate, 'yyyy-MM-dd');
+};
 
 const toMinutes = (time: string): number => {
   const [hours, minutes] = time.split(':').map(Number);
@@ -72,7 +101,9 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [dayBookings, setDayBookings] = useState<BookingCalendarEvent[]>([]);
+  const [bookingsByDate, setBookingsByDate] = useState<Record<string, BookingCalendarEvent[]>>(
+    {},
+  );
   const [isDayBookingsLoading, setIsDayBookingsLoading] = useState(false);
   const [dayBookingsError, setDayBookingsError] = useState<string | null>(null);
   const { flash } = usePage<RoomBookingSharedPageProps>().props;
@@ -85,11 +116,30 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
     unit: '',
     activity_name: '',
     number_of_participants: '',
+    is_recurring: false,
+    repeat_dates: [] as string[],
     selected_date: '',
     booking_slots: [{ room_id: '', start_time: '', end_time: '' }] as BookingSlotForm[],
     document: null as File | null,
   });
   const formErrors = errors as Record<string, string | undefined>;
+  const selectedDateValue = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : '';
+
+  const bookingDates = useMemo(() => {
+    if (!selectedDateValue) {
+      return [];
+    }
+
+    const repeatDates = data.is_recurring
+      ? data.repeat_dates
+          .map((value) => normalizeDateValue(value))
+          .filter((value): value is string => Boolean(value))
+      : [];
+
+    return Array.from(new Set([selectedDateValue, ...repeatDates])).sort();
+  }, [data.is_recurring, data.repeat_dates, selectedDateValue]);
+
+  const dayBookings = selectedDateValue ? bookingsByDate[selectedDateValue] ?? [] : [];
 
   useEffect(() => {
     if (!flash?.success) {
@@ -109,7 +159,6 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
 
   useEffect(() => {
     if (!selectedDate) {
-      setDayBookings([]);
       setDayBookingsError(null);
       setIsDayBookingsLoading(false);
       setData('selected_date', '');
@@ -117,22 +166,40 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
       return;
     }
 
-    const selectedDateValue = format(selectedDate, 'yyyy-MM-dd');
     setData('selected_date', selectedDateValue);
+  }, [selectedDate, selectedDateValue, setData]);
+
+  useEffect(() => {
+    if (!selectedDateValue) {
+      return;
+    }
+
+    const datesToFetch = bookingDates.filter((date) => !(date in bookingsByDate));
+
+    if (datesToFetch.length === 0) {
+      setDayBookingsError(null);
+      setIsDayBookingsLoading(false);
+
+      return;
+    }
 
     const controller = new AbortController();
+    const shouldTrackSelectedDate = datesToFetch.includes(selectedDateValue);
 
-    setIsDayBookingsLoading(true);
-    setDayBookingsError(null);
+    if (shouldTrackSelectedDate) {
+      setIsDayBookingsLoading(true);
+      setDayBookingsError(null);
+    }
 
-    window
-      .fetch(`/booking/bookings?selected_date=${selectedDateValue}`, {
-        signal: controller.signal,
-        headers: {
-          Accept: 'application/json',
-        },
-      })
-      .then(async (response) => {
+    Promise.allSettled(
+      datesToFetch.map(async (date) => {
+        const response = await window.fetch(`/booking/bookings?selected_date=${date}`, {
+          signal: controller.signal,
+          headers: {
+            Accept: 'application/json',
+          },
+        });
+
         if (!response.ok) {
           throw new Error('Gagal memuat jadwal ruangan.');
         }
@@ -141,24 +208,59 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
           data?: BookingCalendarEvent[];
         };
 
-        setDayBookings(payload.data ?? []);
+        return {
+          date,
+          data: payload.data ?? [],
+        };
+      }),
+    )
+      .then((results) => {
+        if (controller.signal.aborted) {
+          return;
+        }
+
+        const nextBookings: Record<string, BookingCalendarEvent[]> = {};
+        let selectedDateFailed = false;
+
+        results.forEach((result, index) => {
+          const date = datesToFetch[index];
+
+          if (result.status === 'fulfilled') {
+            nextBookings[date] = result.value.data;
+            return;
+          }
+
+          if (date === selectedDateValue) {
+            selectedDateFailed = true;
+          }
+        });
+
+        if (Object.keys(nextBookings).length > 0) {
+          setBookingsByDate((previous) => ({
+            ...previous,
+            ...nextBookings,
+          }));
+        }
+
+        setDayBookingsError(selectedDateFailed ? 'Jadwal ruangan belum berhasil dimuat.' : null);
       })
       .catch((error: unknown) => {
         if (error instanceof DOMException && error.name === 'AbortError') {
           return;
         }
 
-        setDayBookings([]);
-        setDayBookingsError('Jadwal ruangan belum berhasil dimuat.');
+        if (shouldTrackSelectedDate) {
+          setDayBookingsError('Jadwal ruangan belum berhasil dimuat.');
+        }
       })
       .finally(() => {
-        if (!controller.signal.aborted) {
+        if (!controller.signal.aborted && shouldTrackSelectedDate) {
           setIsDayBookingsLoading(false);
         }
       });
 
     return () => controller.abort();
-  }, [selectedDate, setData]);
+  }, [bookingDates, bookingsByDate, selectedDateValue]);
 
   const selectedDateLabel = selectedDate
     ? format(selectedDate, 'dd MMMM yyyy')
@@ -170,6 +272,29 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
   const handleDateChange = (date: Date | undefined) => {
     setSelectedDate(date);
     setIsFormModalOpen(false);
+  };
+
+  const addRepeatDateRow = () => {
+    setData('repeat_dates', [...data.repeat_dates, '']);
+  };
+
+  const removeRepeatDateRow = (index: number) => {
+    setData(
+      'repeat_dates',
+      data.repeat_dates.filter((_, repeatIndex) => repeatIndex !== index),
+    );
+  };
+
+  const updateRepeatDateRow = (index: number, value: string) => {
+    setData(
+      'repeat_dates',
+      data.repeat_dates.map((date, repeatIndex) => (repeatIndex === index ? value : date)),
+    );
+  };
+
+  const toggleRecurring = (checked: boolean) => {
+    setData('is_recurring', checked);
+    setData('repeat_dates', checked ? (data.repeat_dates.length > 0 ? data.repeat_dates : ['']) : []);
   };
 
   const addSlotRow = () => {
@@ -209,14 +334,59 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
     setData('booking_slots', nextSlots);
   };
 
+  const repeatDateErrors = useMemo(() => {
+    if (!data.is_recurring) {
+      return [] as string[];
+    }
+
+    const messages: string[] = [];
+    const seenDates = new Set<string>();
+    const today = startOfDay(new Date());
+
+    if (data.repeat_dates.length === 0) {
+      messages.push('Tambahkan minimal satu tanggal tambahan untuk booking berulang.');
+    }
+
+    data.repeat_dates.forEach((value) => {
+      const normalizedDate = normalizeDateValue(value);
+
+      if (!normalizedDate) {
+        messages.push('Semua tanggal tambahan wajib diisi.');
+        return;
+      }
+
+      const parsedDate = parseISO(normalizedDate);
+
+      if (isBefore(startOfDay(parsedDate), today)) {
+        messages.push('Tanggal tambahan tidak boleh sebelum hari ini.');
+      }
+
+      if (normalizedDate === selectedDateValue) {
+        messages.push('Tanggal tambahan tidak boleh sama dengan tanggal utama.');
+      }
+
+      if (seenDates.has(normalizedDate)) {
+        messages.push('Tanggal tambahan duplikat tidak diperbolehkan.');
+      }
+
+      seenDates.add(normalizedDate);
+    });
+
+    return Array.from(new Set(messages));
+  }, [data.is_recurring, data.repeat_dates, selectedDateValue]);
+
   const localConflicts = useMemo(() => {
-    return data.booking_slots
-      .map((slot, index) => {
+    const conflicts: LocalBookingConflict[] = [];
+
+    bookingDates.forEach((bookingDate) => {
+      const bookingsForDate = bookingsByDate[bookingDate] ?? [];
+
+      data.booking_slots.forEach((slot, index) => {
         if (!slot.room_id || !slot.start_time || !slot.end_time) {
-          return null;
+          return;
         }
 
-        const matched = dayBookings.find((booking) => {
+        const matched = bookingsForDate.find((booking) => {
           if (String(booking.roomId) !== slot.room_id) {
             return false;
           }
@@ -233,25 +403,23 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
         });
 
         if (!matched) {
-          return null;
+          return;
         }
 
         const roomLabel = rooms.find((room) => String(room.id) === slot.room_id)?.name;
 
-        return {
+        conflicts.push({
+          bookingDate,
           index,
           roomLabel: roomLabel ?? 'Ruang',
           startTime: slot.start_time,
           endTime: slot.end_time,
-        };
-      })
-      .filter(Boolean) as {
-      index: number;
-      roomLabel: string;
-      startTime: string;
-      endTime: string;
-    }[];
-  }, [data.booking_slots, dayBookings, rooms]);
+        });
+      });
+    });
+
+    return conflicts;
+  }, [bookingDates, bookingsByDate, data.booking_slots, rooms]);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -260,7 +428,7 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
       return;
     }
 
-    if (localConflicts.length > 0) {
+    if (repeatDateErrors.length > 0 || localConflicts.length > 0) {
       return;
     }
 
@@ -268,6 +436,8 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
       forceFormData: true,
       onSuccess: () => {
         reset();
+        setData('is_recurring', false);
+        setData('repeat_dates', []);
         setData('booking_slots', [{ room_id: '', start_time: '', end_time: '' }]);
         setIsFormModalOpen(false);
       },
@@ -421,7 +591,7 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
                   Form Booking Multi-Ruangan
                 </h2>
                 <p className="mt-2 text-sm text-[var(--public-text-muted)]">
-                  Satu pengajuan bisa memesan beberapa ruangan pada tanggal yang sama dengan jam berbeda per ruangan.
+                  Satu pengajuan bisa memesan beberapa ruangan dan mengulang slot yang sama ke beberapa tanggal berbeda.
                 </p>
               </div>
               <button
@@ -436,15 +606,23 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
               </button>
             </div>
 
-            {(errors.booking_slots || localConflicts.length > 0 || flash?.roomBookingConflicts?.length) ? (
+            {(errors.booking_slots ||
+              errors.repeat_dates ||
+              repeatDateErrors.length > 0 ||
+              localConflicts.length > 0 ||
+              flash?.roomBookingConflicts?.length) ? (
               <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-700">
                 {errors.booking_slots ? <p>{errors.booking_slots}</p> : null}
+                {errors.repeat_dates ? <p>{errors.repeat_dates}</p> : null}
+                {repeatDateErrors.map((message) => (
+                  <p key={message}>{message}</p>
+                ))}
                 {localConflicts.length > 0 ? (
                   <p>
                     Terdapat bentrok lokal pada slot: {localConflicts
                       .map(
                         (conflict) =>
-                          `${conflict.roomLabel} (${conflict.startTime}-${conflict.endTime})`,
+                          `${format(parseISO(conflict.bookingDate), 'dd MMM yyyy')} - ${conflict.roomLabel} (${conflict.startTime}-${conflict.endTime})`,
                       )
                       .join(', ')}.
                   </p>
@@ -454,7 +632,7 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
                     Konflik server: {flash.roomBookingConflicts
                       .map(
                         (conflict) =>
-                          `${conflict.room_name} (${conflict.start_time}-${conflict.end_time})`,
+                          `${format(parseISO(conflict.booking_date), 'dd MMM yyyy')} - ${conflict.room_name} (${conflict.start_time}-${conflict.end_time})`,
                       )
                       .join(', ')}.
                   </p>
@@ -595,6 +773,105 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
               </div>
 
               <div className="rounded-2xl border border-[var(--public-border)] bg-[var(--public-surface-soft)] p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-[var(--public-primary-hover)]">
+                      Pengaturan Tanggal
+                    </p>
+                    <p className="mt-1 text-xs text-[var(--public-text-muted)]">
+                      Tanggal utama mengikuti pilihan kalender. Aktifkan booking berulang untuk menambah hari lain dengan slot ruangan yang sama.
+                    </p>
+                  </div>
+                  <label className="inline-flex items-center gap-3 rounded-2xl border border-[var(--public-border)] bg-white px-4 py-3 text-sm font-medium text-[var(--public-primary-hover)]">
+                    <input
+                      type="checkbox"
+                      checked={data.is_recurring}
+                      onChange={(event) => toggleRecurring(event.target.checked)}
+                      className="h-4 w-4 rounded border-[var(--public-border)] text-[var(--public-primary-hover)]"
+                    />
+                    Berulang
+                  </label>
+                </div>
+
+                <div className="mt-4 rounded-2xl border border-dashed border-[var(--public-border)] bg-white px-4 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--public-text-muted)]">
+                    Tanggal Utama
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-[var(--public-primary-hover)]">
+                    {selectedDateLabel}
+                  </p>
+                </div>
+
+                {data.is_recurring ? (
+                  <div className="mt-4 space-y-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-semibold text-[var(--public-primary-hover)]">
+                        Tanggal Tambahan
+                        <RequiredMark />
+                      </p>
+                      <button
+                        type="button"
+                        onClick={addRepeatDateRow}
+                        className="rounded-xl bg-[var(--public-primary-hover)] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-95"
+                      >
+                        Tambah Tanggal
+                      </button>
+                    </div>
+
+                    {data.repeat_dates.map((repeatDate, repeatIndex) => (
+                      <div
+                        key={`repeat-date-${repeatIndex}`}
+                        className="grid gap-3 rounded-2xl border border-[var(--public-border)] bg-white p-4 md:grid-cols-[1fr_auto]"
+                      >
+                        <div>
+                          <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.1em] text-[var(--public-text-muted)]">
+                            Tanggal Tambahan {repeatIndex + 1}
+                          </label>
+                          <input
+                            value={repeatDate}
+                            onChange={(event) => updateRepeatDateRow(repeatIndex, event.target.value)}
+                            type="date"
+                            min={format(new Date(), 'yyyy-MM-dd')}
+                            required={data.is_recurring}
+                            className="w-full rounded-xl border border-[var(--public-border)] px-4 py-2 text-sm"
+                          />
+                          {formErrors[`repeat_dates.${repeatIndex}`] ? (
+                            <p className="mt-2 text-xs text-red-600">
+                              {formErrors[`repeat_dates.${repeatIndex}`]}
+                            </p>
+                          ) : null}
+                        </div>
+
+                        <div className="flex items-end">
+                          <button
+                            type="button"
+                            onClick={() => removeRepeatDateRow(repeatIndex)}
+                            className="w-full rounded-xl border border-red-200 px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50"
+                            disabled={data.repeat_dates.length <= 1}
+                          >
+                            Hapus
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+
+                <div className="mt-4 rounded-2xl border border-[var(--public-border)] bg-white px-4 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--public-text-muted)]">
+                    Tanggal Yang Akan Dibooking
+                  </p>
+                  <p className="mt-2 text-sm text-[var(--public-text-muted)]">
+                    {bookingDates.length > 0
+                      ? bookingDates
+                          .map((date) => format(parseISO(date), 'dd MMMM yyyy'))
+                          .join(', ')
+                      : 'Belum ada tanggal terpilih.'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-[var(--public-border)] bg-[var(--public-surface-soft)] p-4">
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-sm font-semibold text-[var(--public-primary-hover)]">
                     Slot Ruangan
@@ -725,7 +1002,7 @@ const RoomBooking = ({ rooms, studyPrograms }: RoomBookingProps) => {
                 </button>
                 <button
                   type="submit"
-                  disabled={processing || localConflicts.length > 0}
+                  disabled={processing || repeatDateErrors.length > 0 || localConflicts.length > 0}
                   className="rounded-2xl bg-[var(--public-accent)] px-10 py-4 text-base font-semibold text-[var(--public-primary-hover)] shadow-[0_10px_22px_rgba(244,196,48,0.28)] transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   {processing ? 'Mengirim...' : 'Ajukan Peminjaman'}
