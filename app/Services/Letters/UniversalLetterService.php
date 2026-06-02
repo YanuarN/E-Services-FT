@@ -9,6 +9,7 @@ use IntlCalendar;
 use IntlDateFormatter;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -427,6 +428,14 @@ abstract class UniversalLetterService
 
     private function convertDocxToPdf(string $temporaryWordPath): string
     {
+        return match (config('services.pdf_converter.driver', 'local')) {
+            'http' => $this->convertDocxToPdfViaHttp($temporaryWordPath),
+            default => $this->convertDocxToPdfViaLocal($temporaryWordPath),
+        };
+    }
+
+    private function convertDocxToPdfViaLocal(string $temporaryWordPath): string
+    {
         $process = new Process([
             'libreoffice',
             '--headless',
@@ -450,6 +459,48 @@ abstract class UniversalLetterService
 
         if (! $temporaryPdfPath || ! file_exists($temporaryPdfPath)) {
             throw new RuntimeException('File PDF hasil konversi tidak ditemukan.');
+        }
+
+        return $temporaryPdfPath;
+    }
+
+    private function convertDocxToPdfViaHttp(string $temporaryWordPath): string
+    {
+        $handle = fopen($temporaryWordPath, 'r');
+
+        if ($handle === false) {
+            throw new RuntimeException('File DOCX sementara tidak dapat dibaca untuk dikonversi.');
+        }
+
+        try {
+            $response = Http::timeout(60)
+                ->attach('file', $handle, basename($temporaryWordPath))
+                ->post(config('services.pdf_converter.url'));
+        } catch (Throwable $exception) {
+            throw new RuntimeException(
+                'Gagal mengonversi dokumen DOCX ke PDF melalui HTTP. '.$exception->getMessage(),
+                previous: $exception,
+            );
+        } finally {
+            fclose($handle);
+        }
+
+        if (! $response->successful()) {
+            $message = trim((string) ($response->json('message') ?: $response->body()));
+
+            throw new RuntimeException(
+                'Gagal mengonversi dokumen DOCX ke PDF melalui HTTP. '
+                .($message !== '' ? $message : 'Layanan konversi mengembalikan respons yang tidak valid.')
+            );
+        }
+
+        $filename = basename($temporaryWordPath);
+        $pdfFilename = preg_replace('/\.docx$/i', '.pdf', $filename) ?: pathinfo($filename, PATHINFO_FILENAME).'.pdf';
+        $temporaryPdfPath = $this->temporaryFilePath($pdfFilename);
+        $written = file_put_contents($temporaryPdfPath, $response->body());
+
+        if ($written === false) {
+            throw new RuntimeException('File PDF hasil konversi tidak dapat ditulis ke penyimpanan sementara.');
         }
 
         return $temporaryPdfPath;

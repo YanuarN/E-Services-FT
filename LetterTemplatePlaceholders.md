@@ -422,10 +422,10 @@ Kode template: `room_usage_request`
 - `${unit}`
 - `${kegiatan}`
 - `${nama_kegiatan}`
-- `${tanggal_penggunaan}`
-- `${tanggal_peminjaman}`
-- `${tanggal_pengajuan}`
-- `${tanggal_permohonan}`
+- `${tanggal_penggunaan}` - tanggal penggunaan ruang berdasarkan slot booking
+- `${tanggal_peminjaman}` - tanggal pengajuan dibuat (`created_at`)
+- `${tanggal_pengajuan}` - alias `${tanggal_peminjaman}`
+- `${tanggal_permohonan}` - alias `${tanggal_peminjaman}`
 - `${waktu_mulai}`
 - `${waktu_selesai}`
 - `${waktu_penggunaan}`

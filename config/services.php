@@ -40,4 +40,9 @@ return [
         'app_url' => env('WHATSAPP_APP_URL', env('APP_URL')),
     ],
 
+    'pdf_converter' => [
+        'driver' => env('PDF_CONVERTER_DRIVER', 'local'),
+        'url' => env('PDF_CONVERTER_URL', 'http://localhost:5001/convert'),
+    ],
+
 ];

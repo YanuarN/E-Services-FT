@@ -22,6 +22,7 @@ return new class extends Migration
                 'passport_application',
                 'research_data_request',
                 'research_permission',
+                'room_usage_request',
                 'scholarships_statement',
                 'testing_permission_request',
             ])->unique();
