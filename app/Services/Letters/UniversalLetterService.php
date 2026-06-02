@@ -31,6 +31,12 @@ abstract class UniversalLetterService
     {
         $this->assertSupportedModel($letter);
 
+        $existingPdfPath = trim((string) ($letter->getAttribute('pdf_path') ?? ''));
+
+        if ($existingPdfPath !== '') {
+            return $existingPdfPath;
+        }
+
         $template = $this->resolveTemplate();
         $temporaryWordPath = $this->buildWordDocument($letter, $template);
 

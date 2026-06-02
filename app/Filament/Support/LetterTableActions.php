@@ -60,7 +60,11 @@ class LetterTableActions
                         'letter_date' => $data['letter_date'],
                     ]);
 
-                    $service->ensureTemplateReady();
+                    $generatedPdf = static::shouldGeneratePdf($record);
+
+                    if ($generatedPdf) {
+                        $service->ensureTemplateReady();
+                    }
 
                     $pdfPath = $service->generatePdf($record);
 
@@ -71,7 +75,9 @@ class LetterTableActions
 
                     Notification::make()
                         ->title('Surat berhasil di-accept.')
-                        ->body('PDF surat berhasil dibuat dan notifikasi WhatsApp siap dikirim.')
+                        ->body($generatedPdf
+                            ? 'PDF surat berhasil dibuat dan notifikasi WhatsApp siap dikirim.'
+                            : 'PDF yang sudah ada digunakan kembali dan notifikasi WhatsApp siap dikirim.')
                         ->success()
                         ->send();
 
@@ -228,6 +234,11 @@ class LetterTableActions
 
         return filled($record->getAttribute('pdf_path'))
             && in_array($status, ['APPROVE', 'APPROVED'], true);
+    }
+
+    private static function shouldGeneratePdf(Model $record): bool
+    {
+        return blank($record->getAttribute('pdf_path'));
     }
 
     private static function approvedStatus(Model $record): string

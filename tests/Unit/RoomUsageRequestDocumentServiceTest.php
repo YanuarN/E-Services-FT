@@ -40,6 +40,20 @@ class RoomUsageRequestDocumentServiceTest extends TestCase
         );
     }
 
+    public function test_generate_pdf_returns_existing_pdf_path_without_regenerating(): void
+    {
+        $record = new RoomUsageRequest([
+            'pdf_path' => 'generated-letters/room_usage_request/existing.pdf',
+        ]);
+
+        $service = new RoomUsageRequestDocumentService();
+
+        $this->assertSame(
+            'generated-letters/room_usage_request/existing.pdf',
+            $service->generatePdf($record),
+        );
+    }
+
     public function test_room_usage_request_document_payload_builds_date_range_for_multi_day_bookings(): void
     {
         $roomA = Room::query()->create([
